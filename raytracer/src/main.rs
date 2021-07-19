@@ -22,6 +22,7 @@ use shapes::Hitlist;
 use shapes::Hitrec;
 use shapes::Hittable;
 use shapes::Sphere;
+use shapes::MovingSphere;
 use std::fs::File;
 use std::io::prelude::*;
 use std::sync::Arc;
@@ -35,7 +36,7 @@ pub fn ray_color(r: Ray, list: &Hitlist, depth: i32) -> Color {
     match list.hit(r.clone(), 0.001, tools::INF) {
         Some(rec) => {
             let tem: Vec3 = Vec3::new(0.0, 0.0, 0.0);
-            let mut scat: Ray = Ray::new(tem.clone(), tem.clone());
+            let mut scat: Ray = Ray::new(tem.clone(), tem.clone(), 0.0);
             let mut att: Color = Color::new(0.0, 0.0, 0.0);
             if rec.mat.scatter(r.clone(), rec.clone(), &mut att, &mut scat) {
                 return Color::elemul(att.clone(), ray_color(scat.clone(), list, depth - 1));
@@ -54,10 +55,10 @@ pub fn ray_color(r: Ray, list: &Hitlist, depth: i32) -> Color {
 fn main() {
     let mut file = File::create("image.ppm").unwrap();
 
-    const AS_RATIO: f64 = 3.0 / 2.0;
-    const I_WID: i32 = 1200;
+    const AS_RATIO: f64 = 16.0 / 9.0;
+    const I_WID: i32 = 400;
     const I_HIT: i32 = (I_WID as f64 / AS_RATIO) as i32;
-    const SAMPLES: i32 = 500; //500
+    const SAMPLES: i32 = 100; //500
     const MAXDEEP: i32 = 50; //50
 
     let mut img: RgbImage = ImageBuffer::new(I_WID as u32, I_HIT as u32);
@@ -87,7 +88,8 @@ fn main() {
                 if chmat < 0.8 {
                     let lbc: Color = Color::elemul(Color::randv(), Color::randv());
                     let mat: Lamber = Lamber::new(lbc);
-                    let arc_s = Arc::new(Sphere::new(ct.clone(), 0.2, mat));
+                    let ct2: Vec3 = ct.clone() + Vec3::new(0.0, randf(0.0, 0.5), 0.0);
+                    let arc_s = Arc::new(MovingSphere::new(ct.clone(), ct2.clone(), 0.0, 1.0, 0.2, mat));
                     list.add(arc_s);
                 } else if chmat < 0.95 {
                     let lbc: Color = Color::randvr(0.5, 1.0);
@@ -118,7 +120,7 @@ fn main() {
     let arc_s3 = Arc::new(Sphere::new(Vec3::new(4.0, 1.0, 0.0), 1.0, mat_3));
     list.add(arc_s3);
 
-    let lookfrom: Vec3 = Vec3::new(12.0, 2.0, 3.0);
+    let lookfrom: Vec3 = Vec3::new(13.0, 2.0, 3.0);
     let lookat: Vec3 = Vec3::new(0.0, 0.0, 0.0);
     let vup: Vec3 = Vec3::new(0.0, 1.0, 0.0);
     let dist_to_focus: f64 = 10.0;
@@ -131,6 +133,8 @@ fn main() {
         AS_RATIO,
         aperture,
         dist_to_focus,
+        0.0,
+        1.0,
     );
 
     file.write(format!("P3\n{} {}\n255\n", I_WID, I_HIT).as_bytes());

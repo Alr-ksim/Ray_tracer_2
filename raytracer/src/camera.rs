@@ -13,6 +13,8 @@ pub struct Camera {
     cv: Vec3,
     cw: Vec3,
     lens_radius: f64,
+    tm0: f64,
+    tm1: f64,
 }
 
 impl Camera {
@@ -24,6 +26,8 @@ impl Camera {
         aspect_ratio: f64,
         aperture: f64,
         focus_dist: f64,
+        _tm0: f64,
+        _tm1: f64,
     ) -> Self {
         let theta: f64 = tools::dtr(vfov);
         let h: f64 = (theta / 2.0).tan();
@@ -50,6 +54,8 @@ impl Camera {
             cv: v.clone(),
             cw: w.clone(),
             lens_radius: len.clone(),
+            tm0: _tm0,
+            tm1: _tm1,
         }
     }
 
@@ -63,6 +69,7 @@ impl Camera {
                 + self.vertical.clone() * t
                 - self.origin.clone()
                 - offset.clone(),
+                tools::randf(self.tm0, self.tm1),
         )
     }
 }

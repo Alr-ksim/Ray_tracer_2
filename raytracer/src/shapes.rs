@@ -64,6 +64,26 @@ impl<M: Material> Sphere<M> {
     }
 }
 
+#[derive(Debug)]
+pub struct  MovingSphere<M: Material> {
+    pub ct0: Vec3,
+    pub ct1: Vec3,
+    pub tm0: f64,
+    pub tm1: f64,
+    pub rad: f64,
+    pub mat: M,
+}
+
+impl <M: Material> MovingSphere<M> {
+    pub fn new(ct0: Vec3, ct1: Vec3, tm0: f64, tm1: f64, rad: f64, mat: M) -> Self {
+        Self { ct0, ct1, tm0, tm1, rad, mat }
+    }
+
+    pub fn ct(&self, tm: f64) -> Vec3 {
+        self.ct0.clone() + (self.ct1.clone() - self.ct0.clone())*((tm - self.tm0)/(self.tm1-self.tm0))
+    }
+}
+
 pub trait Hittable: Debug {
     fn hit(&self, r: Ray, t_min: f64, t_max: f64) -> Option<Hitrec>;
 }
@@ -127,6 +147,39 @@ impl<M: Material> Hittable for Sphere<M> {
                 rec.t = t;
                 rec.p = r.at(t);
                 let nf: Vec3 = (rec.p() - self.ct()) / self.rad;
+                rec.set_face(r.clone(), nf);
+                return Some(rec);
+            }
+            return None;
+        }
+    }
+}
+
+impl<M: Material> Hittable for MovingSphere<M> {
+    fn hit<'a>(&'a self, r: Ray, t_min: f64, t_max: f64) -> Option<Hitrec> {
+        let oc: Vec3 = r.origin() - self.ct(r.time());
+        let a: f64 = r.diraction().squared_length();
+        let h: f64 = (r.diraction() * oc.clone());
+        let c: f64 = (oc.squared_length()) - self.rad * self.rad;
+        let dis: f64 = h * h - a * c;
+        let mut rec: Hitrec = Hitrec::new(&(self.mat));
+        if dis <= 0.0 {
+            return None;
+        } else {
+            let root: f64 = dis.sqrt();
+            let mut t: f64 = (-h - root) / a;
+            if (t > t_min && t < t_max) {
+                rec.t = t;
+                rec.p = r.at(t);
+                let nf: Vec3 = (rec.p() - self.ct(r.time())) / self.rad;
+                rec.set_face(r.clone(), nf);
+                return Some(rec);
+            }
+            t = (-h + root) / a;
+            if (t > t_min && t < t_max) {
+                rec.t = t;
+                rec.p = r.at(t);
+                let nf: Vec3 = (rec.p() - self.ct(r.time())) / self.rad;
                 rec.set_face(r.clone(), nf);
                 return Some(rec);
             }

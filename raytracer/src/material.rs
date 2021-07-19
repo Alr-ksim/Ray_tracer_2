@@ -43,7 +43,7 @@ impl Lamber {
 impl Material for Lamber {
     fn scatter(&self, r_in: Ray, rec: Hitrec, att: &mut Color, scat: &mut Ray) -> bool {
         let scat_dir: Vec3 = rec.nf() + vec3::rand_uint_vec();
-        scat.copy(Ray::new(rec.p(), scat_dir.clone()));
+        scat.copy(Ray::new(rec.p(), scat_dir.clone(), r_in.time()));
         att.copy(self.color());
         true
     }
@@ -73,6 +73,7 @@ impl Material for Metal {
         scat.copy(Ray::new(
             rec.p(),
             rft.clone() + vec3::rand_in_unit_sphere() * self.fuz(),
+            r_in.time(),
         ));
         att.copy(self.color());
         scat.diraction() * rec.nf() > 0.0
@@ -113,15 +114,15 @@ impl Material for Dielectric {
         let sin_theta: f64 = (1.0 - cos_theta * cos_theta).sqrt();
         if rate * sin_theta > 1.0 {
             let refec: Vec3 = Vec3::reflect(uint_dir.clone(), rec.nf());
-            scat.copy(Ray::new(rec.p(), refec.clone()));
+            scat.copy(Ray::new(rec.p(), refec.clone(), r_in.time()));
         } else {
             let prob: f64 = schlick(cos_theta, rate);
             if tools::randf(0.0, 1.0) < prob {
                 let refec: Vec3 = Vec3::reflect(uint_dir.clone(), rec.nf());
-                scat.copy(Ray::new(rec.p(), refec.clone()));
+                scat.copy(Ray::new(rec.p(), refec.clone(), r_in.time()));
             } else {
                 let refac: Vec3 = Vec3::refract(uint_dir.clone(), rec.nf(), rate);
-                scat.copy(Ray::new(rec.p(), refac.clone()));
+                scat.copy(Ray::new(rec.p(), refac.clone(), r_in.time()));
             }
         }
         true
