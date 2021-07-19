@@ -26,7 +26,7 @@ impl Ray {
     pub fn time(&self) -> f64 {
         self.tm.clone()
     }
-    
+
     pub fn at(&self, t: f64) -> Vec3 {
         self.org.clone() + self.dir.clone() * t
     }

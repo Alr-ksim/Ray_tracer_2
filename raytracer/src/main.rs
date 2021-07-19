@@ -21,8 +21,8 @@ use ray::Ray;
 use shapes::Hitlist;
 use shapes::Hitrec;
 use shapes::Hittable;
-use shapes::Sphere;
 use shapes::MovingSphere;
+use shapes::Sphere;
 use std::fs::File;
 use std::io::prelude::*;
 use std::sync::Arc;
@@ -89,7 +89,14 @@ fn main() {
                     let lbc: Color = Color::elemul(Color::randv(), Color::randv());
                     let mat: Lamber = Lamber::new(lbc);
                     let ct2: Vec3 = ct.clone() + Vec3::new(0.0, randf(0.0, 0.5), 0.0);
-                    let arc_s = Arc::new(MovingSphere::new(ct.clone(), ct2.clone(), 0.0, 1.0, 0.2, mat));
+                    let arc_s = Arc::new(MovingSphere::new(
+                        ct.clone(),
+                        ct2.clone(),
+                        0.0,
+                        1.0,
+                        0.2,
+                        mat,
+                    ));
                     list.add(arc_s);
                 } else if chmat < 0.95 {
                     let lbc: Color = Color::randvr(0.5, 1.0);

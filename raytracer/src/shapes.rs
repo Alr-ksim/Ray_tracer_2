@@ -65,7 +65,7 @@ impl<M: Material> Sphere<M> {
 }
 
 #[derive(Debug)]
-pub struct  MovingSphere<M: Material> {
+pub struct MovingSphere<M: Material> {
     pub ct0: Vec3,
     pub ct1: Vec3,
     pub tm0: f64,
@@ -74,13 +74,21 @@ pub struct  MovingSphere<M: Material> {
     pub mat: M,
 }
 
-impl <M: Material> MovingSphere<M> {
+impl<M: Material> MovingSphere<M> {
     pub fn new(ct0: Vec3, ct1: Vec3, tm0: f64, tm1: f64, rad: f64, mat: M) -> Self {
-        Self { ct0, ct1, tm0, tm1, rad, mat }
+        Self {
+            ct0,
+            ct1,
+            tm0,
+            tm1,
+            rad,
+            mat,
+        }
     }
 
     pub fn ct(&self, tm: f64) -> Vec3 {
-        self.ct0.clone() + (self.ct1.clone() - self.ct0.clone())*((tm - self.tm0)/(self.tm1-self.tm0))
+        self.ct0.clone()
+            + (self.ct1.clone() - self.ct0.clone()) * ((tm - self.tm0) / (self.tm1 - self.tm0))
     }
 }
 

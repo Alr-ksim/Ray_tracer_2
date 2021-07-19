@@ -69,7 +69,7 @@ impl Camera {
                 + self.vertical.clone() * t
                 - self.origin.clone()
                 - offset.clone(),
-                tools::randf(self.tm0, self.tm1),
+            tools::randf(self.tm0, self.tm1),
         )
     }
 }
