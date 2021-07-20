@@ -34,11 +34,27 @@ impl Perlin {
     }
 
     pub fn noise(&self, p: &Vec3) -> f64 {
-        let i = (255 & (4.0 * p.x()) as i32) as usize;
-        let j = (255 & (4.0 * p.y()) as i32) as usize;
-        let k = (255 & (4.0 * p.z()) as i32) as usize;
+        let u = p.x() - p.x().floor();
+        let v = p.y() - p.y().floor();
+        let w = p.z() - p.z().floor();
 
-        self.ranfloat[self.perm_x[i] ^ self.perm_y[j] ^ self.perm_z[k]]
+        let i = p.x().floor() as i32;
+        let j = p.y().floor() as i32;
+        let k = p.z().floor() as i32;
+
+        let mut c: [[[f64; 2]; 2]; 2] = [[[0.0; 2]; 2]; 2];
+
+        for di in 0..2 {
+            for dj in 0..2 {
+                for dk in 0..2 {
+                    c[di][dj][dk] = self.ranfloat[self.perm_x[((i + di as i32) & 255) as usize]
+                        ^ self.perm_y[((j + dj as i32) & 255) as usize]
+                        ^ self.perm_z[((k + dk as i32) & 255) as usize]]
+                }
+            }
+        }
+
+        Perlin::trilinear_interp(&c, u, v, w)
     }
 
     fn perlin_generate_perm(v: &mut Vec<usize>) {
@@ -55,5 +71,23 @@ impl Perlin {
             v[i] = v[tar];
             v[tar] = tmp;
         }
+    }
+
+    fn trilinear_interp(c: &[[[f64; 2]; 2]; 2], u: f64, v: f64, w: f64) -> f64 {
+        let mut accum = 0.0;
+        for i in 0..2 {
+            for j in 0..2 {
+                for k in 0..2 {
+                    let di = i as f64;
+                    let dj = j as f64;
+                    let dk = k as f64;
+                    accum += (di * u + (1.0 - di) * (1.0 - u))
+                        * (dj * v + (1.0 - dj) * (1.0 - v))
+                        * (dk * w + (1.0 - dk) * (1.0 - w))
+                        * c[i][j][k];
+                }
+            }
+        }
+        accum
     }
 }
