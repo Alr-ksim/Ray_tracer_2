@@ -53,18 +53,7 @@ pub fn ray_color(r: Ray, list: &Hitlist, depth: i32) -> Color {
     }
 }
 
-fn main() {
-    let mut file = File::create("image.ppm").unwrap();
-
-    const AS_RATIO: f64 = 16.0 / 9.0;
-    const I_WID: i32 = 400;
-    const I_HIT: i32 = (I_WID as f64 / AS_RATIO) as i32;
-    const SAMPLES: i32 = 500; //500
-    const MAXDEEP: i32 = 50; //50
-
-    let mut img: RgbImage = ImageBuffer::new(I_WID as u32, I_HIT as u32);
-    let bar = ProgressBar::new(I_HIT as u64);
-
+pub fn random_scene() -> Hitlist {
     let mut list: Hitlist = Hitlist::new();
 
     let c1 = Color::new(0.2, 0.3, 0.1);
@@ -131,16 +120,70 @@ fn main() {
     let arc_s3 = Arc::new(Sphere::new(Vec3::new(4.0, 1.0, 0.0), 1.0, mat_3));
     list.add(arc_s3);
 
-    let lookfrom: Vec3 = Vec3::new(13.0, 2.0, 3.0);
-    let lookat: Vec3 = Vec3::new(0.0, 0.0, 0.0);
-    let vup: Vec3 = Vec3::new(0.0, 1.0, 0.0);
-    let dist_to_focus: f64 = 10.0;
-    let aperture: f64 = 0.1;
+    list
+}
+
+pub fn two_sphere() -> Hitlist {
+    let mut list = Hitlist::new();
+
+    let c1 = Color::new(0.2, 0.3, 0.1);
+    let c2 = Color::new(0.9, 0.9, 0.9);
+    let checker = Arc::new(texture::CheckerTexture::cnew(c1, c2));
+    let mat = Lamber::new(checker);
+
+    let arc_1 = Arc::new(Sphere::new(Vec3::new(0.0, -10.0, 0.0), 10.0, mat.clone()));
+    let arc_2 = Arc::new(Sphere::new(Vec3::new(0.0, 10.0, 0.0), 10.0, mat.clone()));
+    list.add(arc_1);
+    list.add(arc_2);
+
+    list
+}
+
+fn main() {
+    let mut file = File::create("image.ppm").unwrap();
+
+    const AS_RATIO: f64 = 16.0 / 9.0;
+    const I_WID: i32 = 400;
+    const I_HIT: i32 = (I_WID as f64 / AS_RATIO) as i32;
+    const SAMPLES: i32 = 500; //500
+    const MAXDEEP: i32 = 50; //50
+
+    let mut img: RgbImage = ImageBuffer::new(I_WID as u32, I_HIT as u32);
+    let bar = ProgressBar::new(I_HIT as u64);
+
+    let mut list = Hitlist::new();
+
+    let mut lookfrom = Vec3::new(13.0, 2.0, 3.0);
+    let mut lookat = Vec3::new(0.0, 0.0, 0.0);
+    let mut vup = Vec3::new(0.0, 1.0, 0.0);
+    let mut vfov = 40.0;
+    let mut aperture = 0.0;
+    let mut dist_to_focus: f64 = 10.0;
+
+    const TAC: i32 = 1;
+    match TAC {
+        0 => {
+            list = random_scene();
+            lookfrom = Vec3::new(13.0, 2.0, 3.0);
+            lookat = Vec3::new(0.0, 0.0, 0.0);
+            vfov = 20.0;
+            aperture = 0.1;
+        }
+        1 => {
+            list = two_sphere();
+            lookfrom = Vec3::new(13.0, 2.0, 3.0);
+            lookat = Vec3::new(0.0, 0.0, 0.0);
+            vfov = 20.0;
+            aperture = 0.0;
+        }
+        _ => {}
+    }
+
     let cam: Camera = Camera::new(
         lookfrom.clone(),
         lookat.clone(),
         vup.clone(),
-        20.0,
+        vfov,
         AS_RATIO,
         aperture,
         dist_to_focus,
