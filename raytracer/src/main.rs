@@ -143,7 +143,7 @@ pub fn two_sphere() -> Hitlist {
 pub fn two_perlin() -> Hitlist {
     let mut list = Hitlist::new();
 
-    let pertext = Arc::new(texture::NoiseTexture::new());
+    let pertext = Arc::new(texture::NoiseTexture::new(4.0));
     let mat = Lamber::new(pertext);
 
     let arc_1 = Arc::new(Sphere::new(
@@ -164,8 +164,8 @@ fn main() {
     const AS_RATIO: f64 = 16.0 / 9.0;
     const I_WID: i32 = 400;
     const I_HIT: i32 = (I_WID as f64 / AS_RATIO) as i32;
-    const SAMPLES: i32 = 500; //500
-    const MAXDEEP: i32 = 50; //50
+    const SAMPLES: i32 = 10; //500
+    const MAXDEEP: i32 = 5; //50
 
     let mut img: RgbImage = ImageBuffer::new(I_WID as u32, I_HIT as u32);
     let bar = ProgressBar::new(I_HIT as u64);
