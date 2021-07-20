@@ -14,6 +14,11 @@ pub fn randf(low: f64, high: f64) -> f64 {
     rng.gen_range(low, high)
 }
 
+pub fn randi(low: i32, high: i32) -> i32 {
+    let mut rng = rand::thread_rng();
+    rng.gen_range(low as f64, high as f64 + 1.0) as i32
+}
+
 pub fn clamp(x: f64, x_min: f64, x_max: f64) -> f64 {
     if x < x_min {
         return x_min;

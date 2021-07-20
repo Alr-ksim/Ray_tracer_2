@@ -4,8 +4,11 @@ use crate::shapes::Hitrec;
 use crate::tools;
 use crate::vec3;
 use crate::vec3::Vec3;
+use crate::texture;
+use crate::texture::Texture;
 use std::cmp::min;
 use std::fmt::Debug;
+use std::sync::Arc;
 
 pub trait Material: Debug {
     fn scatter(&self, r_in: Ray, rec: Hitrec, att: &mut Color, scat: &mut Ray) -> bool;
@@ -28,15 +31,15 @@ impl Material for Neg {
 
 #[derive(Debug, Clone)]
 pub struct Lamber {
-    pub lbc: Color,
+    pub lbc: Arc<Texture>,
 }
 
 impl Lamber {
-    pub fn new(lbc: Color) -> Self {
+    pub fn new(lbc: Arc<Texture>) -> Self {
         Self { lbc }
     }
-    pub fn color(&self) -> Color {
-        self.lbc.clone()
+    pub fn cnew(c: Color) -> Self {
+        Self { lbc: Arc::new(texture::SolidColor::new(c)), }
     }
 }
 
@@ -44,7 +47,7 @@ impl Material for Lamber {
     fn scatter(&self, r_in: Ray, rec: Hitrec, att: &mut Color, scat: &mut Ray) -> bool {
         let scat_dir: Vec3 = rec.nf() + vec3::rand_uint_vec();
         scat.copy(Ray::new(rec.p(), scat_dir.clone(), r_in.time()));
-        att.copy(self.color());
+        att.copy(self.lbc.value(rec.u, rec.v, &rec.p));
         true
     }
 }

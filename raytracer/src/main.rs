@@ -10,6 +10,7 @@ pub mod ray;
 pub mod shapes;
 pub mod tools;
 pub mod vec3;
+pub mod texture;
 use camera::Camera;
 use color::Color;
 use material::Dielectric;
@@ -58,14 +59,17 @@ fn main() {
     const AS_RATIO: f64 = 16.0 / 9.0;
     const I_WID: i32 = 400;
     const I_HIT: i32 = (I_WID as f64 / AS_RATIO) as i32;
-    const SAMPLES: i32 = 100; //500
+    const SAMPLES: i32 = 500; //500
     const MAXDEEP: i32 = 50; //50
 
     let mut img: RgbImage = ImageBuffer::new(I_WID as u32, I_HIT as u32);
     let bar = ProgressBar::new(I_HIT as u64);
 
     let mut list: Hitlist = Hitlist::new();
-    let mat_g: Lamber = Lamber::new(Color::new(0.5, 0.5, 0.5)); // 0.5
+
+    let c1= Color::new(0.2, 0.3, 0.1);
+    let c2= Color::new(0.9, 0.9, 0.9);
+    let mat_g: Lamber = Lamber::new(Arc::new(texture::CheckerTexture::cnew(c1, c2))); // 0.5
     let arc_g = Arc::new(Sphere::new(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
@@ -87,7 +91,7 @@ fn main() {
             if (ct.clone() - Vec3::new(4.0, 0.2, 0.0)).length() > 0.9 {
                 if chmat < 0.8 {
                     let lbc: Color = Color::elemul(Color::randv(), Color::randv());
-                    let mat: Lamber = Lamber::new(lbc);
+                    let mat: Lamber = Lamber::cnew(lbc);
                     let ct2: Vec3 = ct.clone() + Vec3::new(0.0, randf(0.0, 0.5), 0.0);
                     let arc_s = Arc::new(MovingSphere::new(
                         ct.clone(),
@@ -119,7 +123,7 @@ fn main() {
     let arc_s1 = Arc::new(Sphere::new(Vec3::new(0.0, 1.0, 0.0), 1.0, mat_1));
     list.add(arc_s1);
 
-    let mat_2: Lamber = Lamber::new(Color::new(0.4, 0.2, 0.1));
+    let mat_2: Lamber = Lamber::cnew(Color::new(0.4, 0.2, 0.1));
     let arc_s2 = Arc::new(Sphere::new(Vec3::new(-4.0, 1.0, 0.0), 1.0, mat_2));
     list.add(arc_s2);
 
