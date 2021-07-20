@@ -6,6 +6,7 @@ use indicatif::ProgressBar;
 pub mod camera;
 pub mod color;
 pub mod material;
+pub mod perlin;
 pub mod ray;
 pub mod shapes;
 pub mod texture;
@@ -139,6 +140,24 @@ pub fn two_sphere() -> Hitlist {
     list
 }
 
+pub fn two_perlin() -> Hitlist {
+    let mut list = Hitlist::new();
+
+    let pertext = Arc::new(texture::NoiseTexture::new());
+    let mat = Lamber::new(pertext);
+
+    let arc_1 = Arc::new(Sphere::new(
+        Vec3::new(0.0, -1000.0, 0.0),
+        1000.0,
+        mat.clone(),
+    ));
+    let arc_2 = Arc::new(Sphere::new(Vec3::new(0.0, 2.0, 0.0), 2.0, mat.clone()));
+    list.add(arc_1);
+    list.add(arc_2);
+
+    list
+}
+
 fn main() {
     let mut file = File::create("image.ppm").unwrap();
 
@@ -160,7 +179,7 @@ fn main() {
     let mut aperture = 0.0;
     let mut dist_to_focus: f64 = 10.0;
 
-    const TAC: i32 = 1;
+    const TAC: i32 = 2;
     match TAC {
         0 => {
             list = random_scene();
@@ -171,6 +190,13 @@ fn main() {
         }
         1 => {
             list = two_sphere();
+            lookfrom = Vec3::new(13.0, 2.0, 3.0);
+            lookat = Vec3::new(0.0, 0.0, 0.0);
+            vfov = 20.0;
+            aperture = 0.0;
+        }
+        2 => {
+            list = two_perlin();
             lookfrom = Vec3::new(13.0, 2.0, 3.0);
             lookat = Vec3::new(0.0, 0.0, 0.0);
             vfov = 20.0;
