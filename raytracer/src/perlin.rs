@@ -53,8 +53,21 @@ impl Perlin {
                 }
             }
         }
-
         Perlin::perlin_interp(&c, u, v, w)
+    }
+
+    pub fn turb(&self, p: &Vec3, depth: usize) -> f64 {
+        let mut accum = 0.0;
+        let mut tem = *p;
+        let mut weight = 1.0;
+
+        for i in 0..depth {
+            accum += weight * self.noise(&tem);
+            weight *= 0.5;
+            tem *= 2.0;
+        }
+
+        accum.abs()
     }
 
     fn perlin_generate_perm(v: &mut Vec<usize>) {
