@@ -1,10 +1,10 @@
 use std::{fmt::Debug, sync::Arc};
 
-use crate::vec3::Vec3;
 use crate::color::Color;
+use crate::vec3::Vec3;
 
 pub trait Texture: Debug {
-    fn value(&self, u: f64, v: f64, p: &Vec3) -> Vec3 ;
+    fn value(&self, u: f64, v: f64, p: &Vec3) -> Vec3;
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -46,8 +46,11 @@ impl CheckerTexture {
 
 impl Texture for CheckerTexture {
     fn value(&self, u: f64, v: f64, p: &Vec3) -> Vec3 {
-        let sines = (10.0*p.x()).sin() * (10.0*p.y()).sin() * (10.0*p.z()).sin();
-        if sines < 0.0 { self.odd.value(u, v, p) }
-        else { self.even.value(u, v, p) }
+        let sines = (10.0 * p.x()).sin() * (10.0 * p.y()).sin() * (10.0 * p.z()).sin();
+        if sines < 0.0 {
+            self.odd.value(u, v, p)
+        } else {
+            self.even.value(u, v, p)
+        }
     }
 }

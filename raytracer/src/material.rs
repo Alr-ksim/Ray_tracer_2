@@ -1,11 +1,11 @@
 use crate::color::Color;
 use crate::ray::Ray;
 use crate::shapes::Hitrec;
+use crate::texture;
+use crate::texture::Texture;
 use crate::tools;
 use crate::vec3;
 use crate::vec3::Vec3;
-use crate::texture;
-use crate::texture::Texture;
 use std::cmp::min;
 use std::fmt::Debug;
 use std::sync::Arc;
@@ -39,7 +39,9 @@ impl Lamber {
         Self { lbc }
     }
     pub fn cnew(c: Color) -> Self {
-        Self { lbc: Arc::new(texture::SolidColor::new(c)), }
+        Self {
+            lbc: Arc::new(texture::SolidColor::new(c)),
+        }
     }
 }
 

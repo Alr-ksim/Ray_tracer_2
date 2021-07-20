@@ -8,9 +8,9 @@ pub mod color;
 pub mod material;
 pub mod ray;
 pub mod shapes;
+pub mod texture;
 pub mod tools;
 pub mod vec3;
-pub mod texture;
 use camera::Camera;
 use color::Color;
 use material::Dielectric;
@@ -67,8 +67,8 @@ fn main() {
 
     let mut list: Hitlist = Hitlist::new();
 
-    let c1= Color::new(0.2, 0.3, 0.1);
-    let c2= Color::new(0.9, 0.9, 0.9);
+    let c1 = Color::new(0.2, 0.3, 0.1);
+    let c2 = Color::new(0.9, 0.9, 0.9);
     let mat_g: Lamber = Lamber::new(Arc::new(texture::CheckerTexture::cnew(c1, c2))); // 0.5
     let arc_g = Arc::new(Sphere::new(
         Vec3::new(0.0, -1000.0, 0.0),

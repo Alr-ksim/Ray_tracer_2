@@ -75,7 +75,7 @@ impl<M: Material> Sphere<M> {
         let theta = (-p.y()).acos();
         let phi = (-p.z()).atan2(p.x()) + tools::PI;
 
-        *u = phi / (2.0*tools::PI);
+        *u = phi / (2.0 * tools::PI);
         *v = theta / tools::PI;
     }
     pub fn ct(&self) -> Vec3 {
@@ -123,7 +123,6 @@ impl<M: Material> Hittable for Sphere<M> {
         Some(out_box)
     }
 }
-
 
 #[derive(Debug)]
 pub struct MovingSphere<M: Material> {
@@ -192,9 +191,7 @@ impl<M: Material> Hittable for MovingSphere<M> {
         let out_box = AABB::merge(box0, box1);
         Some(out_box)
     }
-
 }
-
 
 #[derive(Debug, Clone)]
 pub struct AABB {
@@ -226,22 +223,30 @@ impl AABB {
     }
 
     fn fmin(a: f64, b: f64) -> f64 {
-        if a < b { a } else { b }
+        if a < b {
+            a
+        } else {
+            b
+        }
     }
     fn fmax(a: f64, b: f64) -> f64 {
-        if a > b { a } else { b }
+        if a > b {
+            a
+        } else {
+            b
+        }
     }
 
     pub fn merge(box0: Self, box1: Self) -> Self {
         let small = Vec3::new(
             AABB::fmin(box0.min().x(), box1.min().x()),
             AABB::fmin(box0.min().y(), box1.min().y()),
-            AABB::fmin(box0.min().z(), box1.min().z())
+            AABB::fmin(box0.min().z(), box1.min().z()),
         );
         let big = Vec3::new(
             AABB::fmax(box0.max().x(), box1.max().x()),
             AABB::fmax(box0.max().y(), box1.max().y()),
-            AABB::fmax(box0.max().z(), box1.max().z())
+            AABB::fmax(box0.max().z(), box1.max().z()),
         );
         AABB::new(small, big)
     }
@@ -251,44 +256,51 @@ impl AABB {
         let mut t0 = 0.0;
         let mut t1 = 0.0;
 
-        let inv_d:f64 = r.diraction().x();
+        let inv_d: f64 = r.diraction().x();
         t0 = (self.min().x() - r.origin().x()) * inv_d;
         t1 = (self.max().x() - r.origin().x()) * inv_d;
         if inv_d < 0.0 {
             let tem = t0;
-            t0 = t1; t1 = tem;
+            t0 = t1;
+            t1 = tem;
         }
         ti = if t0 > ti { t0 } else { ti };
         ta = if t1 < ta { t1 } else { ta };
-        if ta <= ti { return false; }
+        if ta <= ti {
+            return false;
+        }
 
-        let inv_d:f64 = r.diraction().y();
+        let inv_d: f64 = r.diraction().y();
         t0 = (self.min().y() - r.origin().y()) * inv_d;
         t1 = (self.max().y() - r.origin().y()) * inv_d;
         if inv_d < 0.0 {
             let tem = t0;
-            t0 = t1; t1 = tem;
+            t0 = t1;
+            t1 = tem;
         }
         ti = if t0 > ti { t0 } else { ti };
         ta = if t1 < ta { t1 } else { ta };
-        if ta <= ti { return false; }
+        if ta <= ti {
+            return false;
+        }
 
-        let inv_d:f64 = r.diraction().z();
+        let inv_d: f64 = r.diraction().z();
         t0 = (self.min().z() - r.origin().z()) * inv_d;
         t1 = (self.max().z() - r.origin().z()) * inv_d;
         if inv_d < 0.0 {
             let tem = t0;
-            t0 = t1; t1 = tem;
+            t0 = t1;
+            t1 = tem;
         }
         ti = if t0 > ti { t0 } else { ti };
         ta = if t1 < ta { t1 } else { ta };
-        if ta <= ti { return false; }
+        if ta <= ti {
+            return false;
+        }
 
         return true;
     }
-
 }
-
 
 #[derive(Debug)]
 pub struct Hitlist {
@@ -321,7 +333,9 @@ impl Hittable for Hitlist {
     }
 
     fn bebox(&self, t0: f64, t1: f64) -> Option<AABB> {
-        if self.shapes.is_empty() { return None; }
+        if self.shapes.is_empty() {
+            return None;
+        }
 
         let neg = Vec3::new(0.0, 0.0, 0.0);
         let mut out_box = AABB::new(neg.clone(), neg.clone());
@@ -330,18 +344,22 @@ impl Hittable for Hitlist {
         for shape in &(self.shapes) {
             match shape.bebox(t0, t1) {
                 Some(t_box) => {
-                    out_box.copy( if flag { t_box.clone() } else { AABB::merge(out_box.clone(), t_box.clone()) });
+                    out_box.copy(if flag {
+                        t_box.clone()
+                    } else {
+                        AABB::merge(out_box.clone(), t_box.clone())
+                    });
                     flag = false;
                 }
-                None => { return None; }
+                None => {
+                    return None;
+                }
             }
         }
 
         return Some(out_box);
     }
-
 }
-
 
 #[derive(Debug, Clone)]
 pub struct BvhNode {
@@ -356,79 +374,79 @@ impl BvhNode {
         start: usize,
         end: usize,
         tm0: f64,
-        tm1: f64, 
+        tm1: f64,
     ) -> Self {
         let mut lft = list[start].clone();
         let mut rgt = list[start].clone();
-        let axis:i32 = tools::randi(0, 2);
-        
+        let axis: i32 = tools::randi(0, 2);
+
         let span = end - start;
 
-        if span == 1 { lft = list[start].clone(); rgt = list[start].clone(); }
-        else if span == 2 {
-            if BvhNode::box_cmp(&list[start], &list[start+1], axis) == Ordering::Less {
+        if span == 1 {
+            lft = list[start].clone();
+            rgt = list[start].clone();
+        } else if span == 2 {
+            if BvhNode::box_cmp(&list[start], &list[start + 1], axis) == Ordering::Less {
                 lft = list[start].clone();
-                rgt = list[start+1].clone();
+                rgt = list[start + 1].clone();
             } else {
-                lft = list[start+1].clone();
+                lft = list[start + 1].clone();
                 rgt = list[start].clone();
             }
         } else {
             list[start..end].sort_by(|a, b| BvhNode::box_cmp(a, b, axis));
-            let mid = start + span/2;
+            let mid = start + span / 2;
             lft = Arc::new(BvhNode::new(list, start, mid, tm0, tm1));
             rgt = Arc::new(BvhNode::new(list, mid, end, tm0, tm1));
         }
 
         match lft.bebox(tm0, tm1) {
-            Some(box_a) => {
-                match rgt.bebox(tm0, tm1) {
-                    Some(box_b) => {
-                        Self {
-                            left: lft,
-                            right: rgt,
-                            curbox: AABB::merge(box_a, box_b),
-                        }
-                    }
-                    None => { panic!("No bounding box in bvh_node constructor."); }
+            Some(box_a) => match rgt.bebox(tm0, tm1) {
+                Some(box_b) => Self {
+                    left: lft,
+                    right: rgt,
+                    curbox: AABB::merge(box_a, box_b),
+                },
+                None => {
+                    panic!("No bounding box in bvh_node constructor.");
                 }
+            },
+            None => {
+                panic!("No bounding box in bvh_node constructor.");
             }
-            None => { panic!("No bounding box in bvh_node constructor."); }
         }
     }
 
-    pub fn fnew(
-        list:&mut Hitlist,
-        tm0: f64,
-        tm1: f64,
-    ) -> Self {
-        let end:usize = list.shapes.len();
+    pub fn fnew(list: &mut Hitlist, tm0: f64, tm1: f64) -> Self {
+        let end: usize = list.shapes.len();
         Self::new(&mut list.shapes, 0, end, tm0, tm1)
     }
 
     pub fn fcmp(a: f64, b: f64) -> Ordering {
-        if a < b { return Ordering::Less; }
-        if a > b { return Ordering::Greater; }
+        if a < b {
+            return Ordering::Less;
+        }
+        if a > b {
+            return Ordering::Greater;
+        }
         return Ordering::Equal;
     }
 
     pub fn box_cmp(a: &Arc<Hittable>, b: &Arc<Hittable>, axis: i32) -> Ordering {
         match a.bebox(0.0, 0.0) {
-            Some(box_a) => {
-                match b.bebox(0.0, 0.0) {
-                    Some(box_b) => {
-                        match axis {
-                            0 => { BvhNode::fcmp(box_a.min().x(), box_b.min().x()) }
-                            1 => { BvhNode::fcmp(box_a.min().y(), box_b.min().y()) }
-                            2 => { BvhNode::fcmp(box_a.min().z(), box_b.min().z()) }
-                            _ => { panic!("Wrong match type.") }
-                        }
+            Some(box_a) => match b.bebox(0.0, 0.0) {
+                Some(box_b) => match axis {
+                    0 => BvhNode::fcmp(box_a.min().x(), box_b.min().x()),
+                    1 => BvhNode::fcmp(box_a.min().y(), box_b.min().y()),
+                    2 => BvhNode::fcmp(box_a.min().z(), box_b.min().z()),
+                    _ => {
+                        panic!("Wrong match type.")
                     }
-                    None => {
-                        panic!("No bounding box in bvh_node constructor.");
-                    }
+                },
+                None => {
+                    panic!("No bounding box in bvh_node constructor.");
                 }
-            }
+            },
             None => {
                 panic!("No bounding box in bvh_node constructor.");
             }
@@ -438,17 +456,27 @@ impl BvhNode {
 
 impl Hittable for BvhNode {
     fn hit(&self, r: Ray, t_min: f64, t_max: f64) -> Option<Hitrec> {
-        if !self.curbox.hit(r.clone(), t_min, t_max) { return None; }
+        if !self.curbox.hit(r.clone(), t_min, t_max) {
+            return None;
+        }
 
         if let Some(rec_l) = self.left.hit(r.clone(), t_min, t_max) {
             match self.right.hit(r.clone(), t_min, rec_l.t) {
-                Some(rec_r) => { return Some(rec_r); }
-                None => { return Some(rec_l); }
+                Some(rec_r) => {
+                    return Some(rec_r);
+                }
+                None => {
+                    return Some(rec_l);
+                }
             }
         }
         match self.right.hit(r.clone(), t_min, t_max) {
-            Some(rec_r) => { return Some(rec_r); }
-            None => { return None; }
+            Some(rec_r) => {
+                return Some(rec_r);
+            }
+            None => {
+                return None;
+            }
         }
     }
 
