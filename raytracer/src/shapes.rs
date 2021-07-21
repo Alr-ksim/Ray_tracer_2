@@ -538,3 +538,111 @@ impl<M: Material> Hittable for XyRect<M> {
         ))
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct XzRect<M: Material> {
+    x0: f64,
+    x1: f64,
+    z0: f64,
+    z1: f64,
+    k: f64,
+    mat: M,
+}
+
+impl<M: Material> XzRect<M> {
+    pub fn new(x0: f64, x1: f64, z0: f64, z1: f64, k: f64, mat: M) -> Self {
+        Self {
+            x0,
+            x1,
+            z0,
+            z1,
+            k,
+            mat,
+        }
+    }
+}
+
+impl<M: Material> Hittable for XzRect<M> {
+    fn hit(&self, r: Ray, t_min: f64, t_max: f64) -> Option<Hitrec> {
+        let t = (self.k - r.origin().y()) / r.diraction().y();
+        if t < t_min || t > t_max {
+            return None;
+        }
+
+        let x = r.origin().x() + t * r.diraction().x();
+        let z = r.origin().z() + t * r.diraction().z();
+        if x < self.x0 || x > self.x1 || z < self.z0 || z > self.z1 {
+            return None;
+        }
+
+        let mut rec = Hitrec::new(&(self.mat));
+        rec.u = (x - self.x0) / (self.x1 - self.x0);
+        rec.v = (z - self.z0) / (self.z1 - self.z0);
+        rec.t = t;
+        rec.set_face(r.clone(), Vec3::new(0.0, 1.0, 0.0));
+        rec.p = r.at(t);
+
+        Some(rec)
+    }
+    fn bebox(&self, t0: f64, t1: f64) -> Option<AABB> {
+        let lit = 0.0001;
+        Some(AABB::new(
+            Vec3::new(self.x0, self.k - lit, self.z0),
+            Vec3::new(self.x1, self.k + lit, self.z1),
+        ))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct YzRect<M: Material> {
+    y0: f64,
+    y1: f64,
+    z0: f64,
+    z1: f64,
+    k: f64,
+    mat: M,
+}
+
+impl<M: Material> YzRect<M> {
+    pub fn new(y0: f64, y1: f64, z0: f64, z1: f64, k: f64, mat: M) -> Self {
+        Self {
+            y0,
+            y1,
+            z0,
+            z1,
+            k,
+            mat,
+        }
+    }
+}
+
+impl<M: Material> Hittable for YzRect<M> {
+    fn hit(&self, r: Ray, t_min: f64, t_max: f64) -> Option<Hitrec> {
+        let t = (self.k - r.origin().x()) / r.diraction().x();
+        if t < t_min || t > t_max {
+            return None;
+        }
+
+        let y = r.origin().y() + t * r.diraction().y();
+        let z = r.origin().z() + t * r.diraction().z();
+        if y < self.y0 || y > self.y1 || z < self.z0 || z > self.z1 {
+            return None;
+        }
+
+        let mut rec = Hitrec::new(&(self.mat));
+        rec.u = (y - self.y0) / (self.y1 - self.y0);
+        rec.v = (z - self.z0) / (self.z1 - self.z0);
+        rec.t = t;
+        rec.set_face(r.clone(), Vec3::new(1.0, 0.0, 0.0));
+        rec.p = r.at(t);
+
+        Some(rec)
+    }
+    fn bebox(&self, t0: f64, t1: f64) -> Option<AABB> {
+        let lit = 0.0001;
+        Some(AABB::new(
+            Vec3::new(self.k - lit, self.y0, self.z0),
+            Vec3::new(self.k + lit, self.y1, self.z1),
+        ))
+    }
+}

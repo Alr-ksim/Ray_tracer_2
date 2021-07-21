@@ -201,17 +201,81 @@ pub fn simple_light() -> Hitlist {
     list
 }
 
+pub fn cornell_box() -> Hitlist {
+    let mut list = Hitlist::new();
+
+    let red = Lamber::cnew(Color::new(0.65, 0.05, 0.05));
+    let white = Lamber::cnew(Color::new(0.73, 0.73, 0.73));
+    let green = Lamber::cnew(Color::new(0.12, 0.45, 0.15));
+    let light = DiffuseLight::cnew(Color::new(15.0, 15.0, 15.0));
+
+    let arc_1 = Arc::new(shapes::YzRect::new(
+        0.0,
+        555.0,
+        0.0,
+        555.0,
+        555.0,
+        green.clone(),
+    ));
+    let arc_2 = Arc::new(shapes::YzRect::new(
+        0.0,
+        555.0,
+        0.0,
+        555.0,
+        0.0,
+        red.clone(),
+    ));
+    let arc_3 = Arc::new(shapes::XzRect::new(
+        213.0,
+        343.0,
+        227.0,
+        332.0,
+        554.0,
+        light.clone(),
+    ));
+    let arc_4 = Arc::new(shapes::XzRect::new(
+        0.0,
+        555.0,
+        0.0,
+        555.0,
+        0.0,
+        white.clone(),
+    ));
+    let arc_5 = Arc::new(shapes::XzRect::new(
+        0.0,
+        555.0,
+        0.0,
+        555.0,
+        555.0,
+        white.clone(),
+    ));
+    let arc_6 = Arc::new(shapes::XyRect::new(
+        0.0,
+        555.0,
+        0.0,
+        555.0,
+        555.0,
+        white.clone(),
+    ));
+
+    list.add(arc_1);
+    list.add(arc_2);
+    list.add(arc_3);
+    list.add(arc_4);
+    list.add(arc_5);
+    list.add(arc_6);
+
+    list
+}
+
 fn main() {
     let mut file = File::create("image.ppm").unwrap();
 
-    const AS_RATIO: f64 = 16.0 / 9.0;
-    const I_WID: i32 = 400;
-    const I_HIT: i32 = (I_WID as f64 / AS_RATIO) as i32;
+    let mut as_ratio: f64 = 16.0 / 9.0;
+    let mut i_wid: i32 = 400;
+    let mut i_hit: i32 = (i_wid as f64 / as_ratio) as i32;
     const SAMPLES: i32 = 500; //500
     const MAXDEEP: i32 = 50; //50
-
-    let mut img: RgbImage = ImageBuffer::new(I_WID as u32, I_HIT as u32);
-    let bar = ProgressBar::new(I_HIT as u64);
 
     let mut list = Hitlist::new();
 
@@ -223,7 +287,7 @@ fn main() {
     let mut dist_to_focus = 10.0;
     let mut backgound = Color::zero();
 
-    const TAC: i32 = 4;
+    const TAC: i32 = 5;
     match TAC {
         0 => {
             list = random_scene();
@@ -265,6 +329,18 @@ fn main() {
             vfov = 20.0;
             aperture = 0.0;
         }
+        5 => {
+            as_ratio = 1.0;
+            i_wid = 600;
+            i_hit = 600;
+
+            list = cornell_box();
+            backgound = Color::zero();
+            lookfrom = Vec3::new(278.0, 278.0, -800.0);
+            lookat = Vec3::new(278.0, 278.0, 0.0);
+            vfov = 40.0;
+            aperture = 0.0;
+        }
         _ => {}
     }
 
@@ -273,28 +349,31 @@ fn main() {
         lookat.clone(),
         vup.clone(),
         vfov,
-        AS_RATIO,
+        as_ratio,
         aperture,
         dist_to_focus,
         0.0,
         1.0,
     );
 
-    file.write(format!("P3\n{} {}\n255\n", I_WID, I_HIT).as_bytes());
-    let mut j: i32 = I_HIT - 1;
+    let mut img: RgbImage = ImageBuffer::new(i_wid as u32, i_hit as u32);
+    let bar = ProgressBar::new(i_hit as u64);
+
+    file.write(format!("P3\n{} {}\n255\n", i_wid, i_hit).as_bytes());
+    let mut j: i32 = i_hit - 1;
     while j >= 0 {
         let mut i: i32 = 0;
-        while i < I_WID {
+        while i < i_wid {
             let mut color: Color = Color::new(0.0, 0.0, 0.0);
             let mut s: i32 = 0;
             while s < SAMPLES {
-                let u: f64 = (i as f64 + randf(0.0, 1.0)) / ((I_WID - 1) as f64);
-                let v: f64 = (j as f64 + randf(0.0, 1.0)) / ((I_HIT - 1) as f64);
+                let u: f64 = (i as f64 + randf(0.0, 1.0)) / ((i_wid - 1) as f64);
+                let v: f64 = (j as f64 + randf(0.0, 1.0)) / ((i_hit - 1) as f64);
                 let r: Ray = cam.get_ray(u, v);
                 color += ray_color(r, &backgound, &list, MAXDEEP);
                 s += 1;
             }
-            let pixel = img.get_pixel_mut(i as u32, (I_HIT - j - 1) as u32);
+            let pixel = img.get_pixel_mut(i as u32, (i_hit - j - 1) as u32);
             let otc: Color = color::out_color(color.clone(), SAMPLES);
             *pixel = image::Rgb([otc.x() as u8, otc.y() as u8, otc.z() as u8]);
             color::write_color(&mut file, color, SAMPLES);
