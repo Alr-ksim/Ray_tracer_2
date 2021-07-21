@@ -1,8 +1,12 @@
+use crate::color::Color;
+use crate::material;
 use crate::material::Material;
 use crate::material::Neg;
 use crate::ray::Ray;
+use crate::texture::Texture;
 use crate::tools;
 use crate::vec3::Vec3;
+use std::borrow::Borrow;
 use std::cmp::Ordering;
 use std::fmt::Debug;
 use std::ops::RemAssign;
@@ -863,5 +867,93 @@ impl Hittable for RotateY {
         } else {
             None
         }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ConstantMedium {
+    boundary: Arc<Hittable>,
+    phase_function: Arc<Material>,
+    neg_inv_density: f64,
+}
+
+impl ConstantMedium {
+    pub fn new(b: Arc<Hittable>, d: f64, a: Arc<Texture>) -> Self {
+        Self {
+            boundary: b,
+            phase_function: Arc::new(material::Isotropic::new(a)),
+            neg_inv_density: (-1.0 / d),
+        }
+    }
+    pub fn cnew(b: Arc<Hittable>, d: f64, c: Color) -> Self {
+        Self {
+            boundary: b,
+            phase_function: Arc::new(material::Isotropic::cnew(c)),
+            neg_inv_density: (-1.0 / d),
+        }
+    }
+}
+
+impl Hittable for ConstantMedium {
+    fn hit(&self, r: Ray, t_min: f64, t_max: f64) -> Option<Hitrec> {
+        const DEBUGABLE: bool = false;
+        let debuging: bool = DEBUGABLE && (tools::randf(0.0, 1.0) < 0.00001);
+
+        match self.boundary.hit(r.clone(), -tools::INF, tools::INF) {
+            Some(mut rec_1) => match self.boundary.hit(r.clone(), rec_1.t + 0.0001, tools::INF) {
+                Some(mut rec_2) => {
+                    if debuging {
+                        print!("\nt_min = {} , t_max = {}\n", rec_1.t, rec_2.t);
+                    }
+
+                    if rec_1.t < t_min {
+                        rec_1.t = t_min;
+                    }
+                    if rec_2.t > t_max {
+                        rec_2.t = t_max;
+                    }
+
+                    if rec_1.t >= rec_2.t {
+                        return None;
+                    }
+
+                    if rec_1.t < 0.0 {
+                        rec_1.t = 0.0;
+                    }
+
+                    let ray_len = r.diraction().length();
+                    let dis_in_boundary = (rec_2.t - rec_1.t) * ray_len;
+                    let hit_dis = self.neg_inv_density * tools::randf(0.0, 1.0).ln();
+
+                    if hit_dis > dis_in_boundary {
+                        return None;
+                    }
+
+                    let mut rec = Hitrec::new(self.phase_function.clone());
+                    rec.t = rec_1.t + hit_dis / ray_len;
+                    rec.p = r.at(rec.t);
+
+                    if debuging {
+                        print!(
+                            "hit_dis = {}\nrec.t = {}\nrec.p = {:?}\n",
+                            hit_dis,
+                            rec.t,
+                            rec.p()
+                        );
+                    }
+
+                    rec.nf = Vec3::new(1.0, 0.0, 0.0);
+                    rec.front_face = true;
+
+                    Some(rec)
+                }
+                None => None,
+            },
+            None => None,
+        }
+    }
+
+    fn bebox(&self, t0: f64, t1: f64) -> Option<AABB> {
+        self.boundary.bebox(t0, t1)
     }
 }

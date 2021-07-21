@@ -207,7 +207,7 @@ pub fn cornell_box() -> Hitlist {
     let red = Arc::new(Lamber::cnew(Color::new(0.65, 0.05, 0.05)));
     let white = Arc::new(Lamber::cnew(Color::new(0.73, 0.73, 0.73)));
     let green = Arc::new(Lamber::cnew(Color::new(0.12, 0.45, 0.15)));
-    let light = Arc::new(DiffuseLight::cnew(Color::new(15.0, 15.0, 15.0)));
+    let light = Arc::new(DiffuseLight::cnew(Color::new(7.0, 7.0, 7.0)));
 
     let arc_1 = Arc::new(shapes::YzRect::new(
         0.0,
@@ -226,10 +226,10 @@ pub fn cornell_box() -> Hitlist {
         red.clone(),
     ));
     let arc_3 = Arc::new(shapes::XzRect::new(
-        213.0,
-        343.0,
-        227.0,
-        332.0,
+        113.0,
+        443.0,
+        127.0,
+        432.0,
         554.0,
         light.clone(),
     ));
@@ -268,6 +268,11 @@ pub fn cornell_box() -> Hitlist {
         arc_7_1.clone(),
         Vec3::new(265.0, 0.0, 295.0),
     ));
+    let arc_7_3 = Arc::new(shapes::ConstantMedium::cnew(
+        arc_7_2.clone(),
+        0.01,
+        Color::zero(),
+    ));
 
     let arc_8 = Arc::new(shapes::Boxes::new(
         Vec3::new(0.0, 0.0, 0.0),
@@ -279,6 +284,11 @@ pub fn cornell_box() -> Hitlist {
         arc_8_1.clone(),
         Vec3::new(130.0, 0.0, 65.0),
     ));
+    let arc_8_3 = Arc::new(shapes::ConstantMedium::cnew(
+        arc_8_2.clone(),
+        0.01,
+        Color::ones(),
+    ));
 
     list.add(arc_1);
     list.add(arc_2);
@@ -286,8 +296,8 @@ pub fn cornell_box() -> Hitlist {
     list.add(arc_4);
     list.add(arc_5);
     list.add(arc_6);
-    list.add(arc_7_2);
-    list.add(arc_8_2);
+    list.add(arc_7_3);
+    list.add(arc_8_3);
 
     list
 }

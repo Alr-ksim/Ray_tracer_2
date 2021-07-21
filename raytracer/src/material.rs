@@ -160,3 +160,27 @@ impl Material for DiffuseLight {
         self.emit.value(u, v, p)
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct Isotropic {
+    lbc: Arc<Texture>,
+}
+
+impl Isotropic {
+    pub fn new(lbc: Arc<Texture>) -> Self {
+        Self { lbc }
+    }
+    pub fn cnew(c: Color) -> Self {
+        Self {
+            lbc: Arc::new(texture::SolidColor::new(c)),
+        }
+    }
+}
+
+impl Material for Isotropic {
+    fn scatter(&self, r_in: Ray, rec: Hitrec, att: &mut Color, scat: &mut Ray) -> bool {
+        *scat = Ray::new(rec.p(), vec3::rand_in_unit_sphere(), r_in.time());
+        *att = self.lbc.value(rec.u, rec.v, &rec.p);
+        true
+    }
+}
