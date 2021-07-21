@@ -7,7 +7,7 @@ use crate::perlin::Perlin;
 use crate::tools;
 use crate::vec3::Vec3;
 
-pub trait Texture: Debug {
+pub trait Texture: Debug + Send + Sync {
     fn value(&self, u: f64, v: f64, p: &Vec3) -> Vec3;
 }
 
@@ -30,6 +30,7 @@ impl Texture for SolidColor {
         self.color()
     }
 }
+
 #[derive(Debug, Clone)]
 pub struct CheckerTexture {
     odd: Arc<Texture>,

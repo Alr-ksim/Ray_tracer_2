@@ -59,7 +59,7 @@ impl Hitrec {
     }
 }
 
-pub trait Hittable: Debug {
+pub trait Hittable: Debug + Send + Sync {
     fn hit(&self, r: Ray, t_min: f64, t_max: f64) -> Option<Hitrec>;
     fn bebox(&self, t0: f64, t1: f64) -> Option<AABB>;
 }
@@ -197,7 +197,7 @@ impl Hittable for MovingSphere {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct AABB {
     mini: Vec3,
     maxi: Vec3,

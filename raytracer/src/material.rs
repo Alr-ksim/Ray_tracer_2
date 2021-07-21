@@ -10,14 +10,14 @@ use std::cmp::min;
 use std::fmt::Debug;
 use std::sync::Arc;
 
-pub trait Material: Debug {
+pub trait Material: Debug + Send + Sync {
     fn scatter(&self, r_in: Ray, rec: Hitrec, att: &mut Color, scat: &mut Ray) -> bool;
     fn emitted(&self, u: f64, v: f64, p: &Vec3) -> Color {
         Color::zero()
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Neg {}
 
 impl Neg {

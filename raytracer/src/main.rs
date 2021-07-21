@@ -1,7 +1,11 @@
 #![allow(warnings, unused)]
 #![allow(clippy::float_cmp)]
+use image::GenericImageView;
 use image::{ImageBuffer, RgbImage};
 use indicatif::ProgressBar;
+use std::clone;
+use std::sync::mpsc::channel;
+use threadpool::ThreadPool;
 
 pub mod camera;
 pub mod color;
@@ -32,6 +36,19 @@ use std::path::Path;
 use std::sync::Arc;
 use tools::randf;
 use vec3::Vec3;
+
+struct World {
+    pub height: u32,
+}
+
+impl World {
+    pub fn new(height: u32) -> Self {
+        Self { height }
+    }
+    pub fn color(&self, _: u32, y: u32) -> u8 {
+        (y * 256 / self.height) as u8
+    }
+}
 
 pub fn ray_color(r: Ray, background: &Color, list: &Hitlist, depth: i32) -> Color {
     if depth <= 0 {
@@ -303,7 +320,18 @@ pub fn cornell_box() -> Hitlist {
 }
 
 fn main() {
-    let mut file = File::create("image.ppm").unwrap();
+    // let mut file = File::create("image.ppm").unwrap();
+    let is_ci = match std::env::var("CI") {
+        Ok(x) => x == "true",
+        Err(_) => false,
+    };
+
+    let (n_jobs, n_workers): (usize, usize) = if is_ci { (32, 2) } else { (16, 2) };
+
+    println!(
+        "CI: {}, using {} jobs and {} workers",
+        is_ci, n_jobs, n_workers
+    );
 
     let mut as_ratio: f64 = 16.0 / 9.0;
     let mut i_wid: i32 = 400;
@@ -390,31 +418,58 @@ fn main() {
         1.0,
     );
 
-    let mut img: RgbImage = ImageBuffer::new(i_wid as u32, i_hit as u32);
-    let bar = ProgressBar::new(i_hit as u64);
+    let (tx, rx) = channel();
+    let pool = ThreadPool::new(n_workers);
 
-    file.write(format!("P3\n{} {}\n255\n", i_wid, i_hit).as_bytes());
-    let mut j: i32 = i_hit - 1;
-    while j >= 0 {
-        let mut i: i32 = 0;
-        while i < i_wid {
-            let mut color: Color = Color::new(0.0, 0.0, 0.0);
-            let mut s: i32 = 0;
-            while s < SAMPLES {
-                let u: f64 = (i as f64 + randf(0.0, 1.0)) / ((i_wid - 1) as f64);
-                let v: f64 = (j as f64 + randf(0.0, 1.0)) / ((i_hit - 1) as f64);
-                let r: Ray = cam.get_ray(u, v);
-                color += ray_color(r, &backgound, &list, MAXDEEP);
-                s += 1;
+    let bar = ProgressBar::new(n_jobs as u64);
+
+    let world = Arc::new(World::new(i_hit as u32));
+
+    // file.write(format!("P3\n{} {}\n255\n", i_wid, i_hit).as_bytes());
+    for i in 0..n_jobs {
+        let tx = tx.clone();
+        let world_ptr = world.clone();
+        let t_list = list.clone();
+        pool.execute(move || {
+            let row_begin = i_hit as usize * i / n_jobs;
+            let row_end = i_hit as usize * (i + 1) / n_jobs;
+            let rander_height = row_end - row_begin;
+
+            let mut img: RgbImage = ImageBuffer::new(i_wid as u32, rander_height as u32);
+            for x in 0..(i_wid as usize) {
+                for (img_y, y) in (row_begin..row_end).enumerate() {
+                    let y = (i_hit as usize - 1 - y) as u32;
+                    let mut color: Color = Color::new(0.0, 0.0, 0.0);
+                    let mut s: i32 = 0;
+                    while s < SAMPLES {
+                        let u: f64 = (x as f64 + randf(0.0, 1.0)) / ((i_wid - 1) as f64);
+                        let v: f64 = (y as f64 + randf(0.0, 1.0)) / ((i_hit - 1) as f64);
+                        let r: Ray = cam.get_ray(u, v);
+                        color += ray_color(r, &backgound, &t_list, MAXDEEP);
+                        s += 1;
+                    }
+                    let pixel = img.get_pixel_mut(x as u32, img_y as u32);
+                    let otc: Color = color::out_color(color.clone(), SAMPLES);
+                    *pixel = image::Rgb([otc.x() as u8, otc.y() as u8, otc.z() as u8]);
+                    // color::write_color(&mut file, color, SAMPLES);
+                }
             }
-            let pixel = img.get_pixel_mut(i as u32, (i_hit - j - 1) as u32);
-            let otc: Color = color::out_color(color.clone(), SAMPLES);
-            *pixel = image::Rgb([otc.x() as u8, otc.y() as u8, otc.z() as u8]);
-            color::write_color(&mut file, color, SAMPLES);
-            i += 1;
+            tx.send((row_begin..row_end, img))
+                .expect("failed to send result");
+        });
+    }
+
+    let mut img: RgbImage = ImageBuffer::new(i_wid as u32, i_hit as u32);
+
+    for (rows, data) in rx.iter().take(n_jobs) {
+        for (idx, row) in rows.enumerate() {
+            for col in 0..(i_wid as u32) {
+                let row = row as u32;
+                let idx = idx as u32;
+                *img.get_pixel_mut(col, row) = *data.get_pixel(col, idx);
+            }
         }
         bar.inc(1);
-        j -= 1;
     }
 
     img.save("output/test.png").unwrap();
