@@ -27,6 +27,7 @@ use shapes::MovingSphere;
 use shapes::Sphere;
 use std::fs::File;
 use std::io::prelude::*;
+use std::path::Path;
 use std::sync::Arc;
 use tools::randf;
 use vec3::Vec3;
@@ -158,6 +159,19 @@ pub fn two_perlin() -> Hitlist {
     list
 }
 
+pub fn earth() -> Hitlist {
+    let mut list = Hitlist::new();
+    let path = Path::new("earthmap.jpg");
+
+    let eartext = Arc::new(texture::ImageTexture::new(&path));
+    let mat = Lamber::new(eartext);
+
+    let arc_s = Arc::new(Sphere::new(Vec3::zero(), 2.0, mat));
+    list.add(arc_s);
+
+    list
+}
+
 fn main() {
     let mut file = File::create("image.ppm").unwrap();
 
@@ -179,7 +193,7 @@ fn main() {
     let mut aperture = 0.0;
     let mut dist_to_focus: f64 = 10.0;
 
-    const TAC: i32 = 2;
+    const TAC: i32 = 3;
     match TAC {
         0 => {
             list = random_scene();
@@ -197,6 +211,13 @@ fn main() {
         }
         2 => {
             list = two_perlin();
+            lookfrom = Vec3::new(13.0, 2.0, 3.0);
+            lookat = Vec3::new(0.0, 0.0, 0.0);
+            vfov = 20.0;
+            aperture = 0.0;
+        }
+        3 => {
+            list = earth();
             lookfrom = Vec3::new(13.0, 2.0, 3.0);
             lookat = Vec3::new(0.0, 0.0, 0.0);
             vfov = 20.0;
