@@ -10,18 +10,18 @@ use std::sync::Arc;
 use std::vec::Vec;
 
 #[derive(Clone, Debug)]
-pub struct Hitrec<'a> {
+pub struct Hitrec {
     pub p: Vec3,
     pub nf: Vec3,
     pub t: f64,
     pub u: f64,
     pub v: f64,
     pub front_face: bool, // true: hit outsides
-    pub mat: &'a dyn Material,
+    pub mat: Arc<Material>,
 }
 
-impl<'a> Hitrec<'a> {
-    pub fn new(nmat: &'a dyn Material) -> Self {
+impl Hitrec {
+    pub fn new(nmat: Arc<Material>) -> Self {
         Self {
             p: Vec3::new(0.0, 0.0, 0.0),
             nf: Vec3::new(0.0, 0.0, 0.0),
@@ -51,7 +51,7 @@ impl<'a> Hitrec<'a> {
         self.nf = rec.nf.clone();
         self.t = rec.t;
         self.front_face = rec.front_face;
-        self.mat = rec.mat;
+        self.mat = rec.mat.clone();
     }
 }
 
@@ -60,15 +60,15 @@ pub trait Hittable: Debug {
     fn bebox(&self, t0: f64, t1: f64) -> Option<AABB>;
 }
 
-#[derive(Debug)]
-pub struct Sphere<M: Material> {
+#[derive(Debug, Clone)]
+pub struct Sphere {
     pub ct: Vec3,
     pub rad: f64,
-    pub mat: M,
+    pub mat: Arc<Material>,
 }
 
-impl<M: Material> Sphere<M> {
-    pub fn new(ct: Vec3, rad: f64, mat: M) -> Self {
+impl Sphere {
+    pub fn new(ct: Vec3, rad: f64, mat: Arc<Material>) -> Self {
         Self { ct, rad, mat }
     }
     pub fn get_uv(p: &Vec3, u: &mut f64, v: &mut f64) {
@@ -83,14 +83,14 @@ impl<M: Material> Sphere<M> {
     }
 }
 
-impl<M: Material> Hittable for Sphere<M> {
-    fn hit<'a>(&'a self, r: Ray, t_min: f64, t_max: f64) -> Option<Hitrec> {
+impl Hittable for Sphere {
+    fn hit(&self, r: Ray, t_min: f64, t_max: f64) -> Option<Hitrec> {
         let oc: Vec3 = r.origin() - self.ct();
         let a: f64 = r.diraction().squared_length();
         let h: f64 = (r.diraction() * oc.clone());
         let c: f64 = (oc.squared_length()) - self.rad * self.rad;
         let dis: f64 = h * h - a * c;
-        let mut rec: Hitrec = Hitrec::new(&(self.mat));
+        let mut rec: Hitrec = Hitrec::new(self.mat.clone());
         if dis <= 0.0 {
             return None;
         } else {
@@ -124,18 +124,18 @@ impl<M: Material> Hittable for Sphere<M> {
     }
 }
 
-#[derive(Debug)]
-pub struct MovingSphere<M: Material> {
+#[derive(Debug, Clone)]
+pub struct MovingSphere {
     pub ct0: Vec3,
     pub ct1: Vec3,
     pub tm0: f64,
     pub tm1: f64,
     pub rad: f64,
-    pub mat: M,
+    pub mat: Arc<Material>,
 }
 
-impl<M: Material> MovingSphere<M> {
-    pub fn new(ct0: Vec3, ct1: Vec3, tm0: f64, tm1: f64, rad: f64, mat: M) -> Self {
+impl MovingSphere {
+    pub fn new(ct0: Vec3, ct1: Vec3, tm0: f64, tm1: f64, rad: f64, mat: Arc<Material>) -> Self {
         Self {
             ct0,
             ct1,
@@ -152,14 +152,14 @@ impl<M: Material> MovingSphere<M> {
     }
 }
 
-impl<M: Material> Hittable for MovingSphere<M> {
-    fn hit<'a>(&'a self, r: Ray, t_min: f64, t_max: f64) -> Option<Hitrec> {
+impl Hittable for MovingSphere {
+    fn hit(&self, r: Ray, t_min: f64, t_max: f64) -> Option<Hitrec> {
         let oc: Vec3 = r.origin() - self.ct(r.time());
         let a: f64 = r.diraction().squared_length();
         let h: f64 = (r.diraction() * oc.clone());
         let c: f64 = (oc.squared_length()) - self.rad * self.rad;
         let dis: f64 = h * h - a * c;
-        let mut rec: Hitrec = Hitrec::new(&(self.mat));
+        let mut rec: Hitrec = Hitrec::new(self.mat.clone());
         if dis <= 0.0 {
             return None;
         } else {
@@ -302,7 +302,7 @@ impl AABB {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Hitlist {
     pub shapes: Vec<Arc<Hittable>>,
 }
@@ -486,17 +486,17 @@ impl Hittable for BvhNode {
 }
 
 #[derive(Debug, Clone)]
-pub struct XyRect<M: Material> {
+pub struct XyRect {
     x0: f64,
     x1: f64,
     y0: f64,
     y1: f64,
     k: f64,
-    mat: M,
+    mat: Arc<Material>,
 }
 
-impl<M: Material> XyRect<M> {
-    pub fn new(x0: f64, x1: f64, y0: f64, y1: f64, k: f64, mat: M) -> Self {
+impl XyRect {
+    pub fn new(x0: f64, x1: f64, y0: f64, y1: f64, k: f64, mat: Arc<Material>) -> Self {
         Self {
             x0,
             x1,
@@ -508,7 +508,7 @@ impl<M: Material> XyRect<M> {
     }
 }
 
-impl<M: Material> Hittable for XyRect<M> {
+impl Hittable for XyRect {
     fn hit(&self, r: Ray, t_min: f64, t_max: f64) -> Option<Hitrec> {
         let t = (self.k - r.origin().z()) / r.diraction().z();
         if t < t_min || t > t_max {
@@ -521,7 +521,7 @@ impl<M: Material> Hittable for XyRect<M> {
             return None;
         }
 
-        let mut rec = Hitrec::new(&(self.mat));
+        let mut rec = Hitrec::new(self.mat.clone());
         rec.u = (x - self.x0) / (self.x1 - self.x0);
         rec.v = (y - self.y0) / (self.y1 - self.y0);
         rec.t = t;
@@ -540,17 +540,17 @@ impl<M: Material> Hittable for XyRect<M> {
 }
 
 #[derive(Debug, Clone)]
-pub struct XzRect<M: Material> {
+pub struct XzRect {
     x0: f64,
     x1: f64,
     z0: f64,
     z1: f64,
     k: f64,
-    mat: M,
+    mat: Arc<Material>,
 }
 
-impl<M: Material> XzRect<M> {
-    pub fn new(x0: f64, x1: f64, z0: f64, z1: f64, k: f64, mat: M) -> Self {
+impl XzRect {
+    pub fn new(x0: f64, x1: f64, z0: f64, z1: f64, k: f64, mat: Arc<Material>) -> Self {
         Self {
             x0,
             x1,
@@ -562,7 +562,7 @@ impl<M: Material> XzRect<M> {
     }
 }
 
-impl<M: Material> Hittable for XzRect<M> {
+impl Hittable for XzRect {
     fn hit(&self, r: Ray, t_min: f64, t_max: f64) -> Option<Hitrec> {
         let t = (self.k - r.origin().y()) / r.diraction().y();
         if t < t_min || t > t_max {
@@ -575,7 +575,7 @@ impl<M: Material> Hittable for XzRect<M> {
             return None;
         }
 
-        let mut rec = Hitrec::new(&(self.mat));
+        let mut rec = Hitrec::new(self.mat.clone());
         rec.u = (x - self.x0) / (self.x1 - self.x0);
         rec.v = (z - self.z0) / (self.z1 - self.z0);
         rec.t = t;
@@ -594,17 +594,17 @@ impl<M: Material> Hittable for XzRect<M> {
 }
 
 #[derive(Debug, Clone)]
-pub struct YzRect<M: Material> {
+pub struct YzRect {
     y0: f64,
     y1: f64,
     z0: f64,
     z1: f64,
     k: f64,
-    mat: M,
+    mat: Arc<Material>,
 }
 
-impl<M: Material> YzRect<M> {
-    pub fn new(y0: f64, y1: f64, z0: f64, z1: f64, k: f64, mat: M) -> Self {
+impl YzRect {
+    pub fn new(y0: f64, y1: f64, z0: f64, z1: f64, k: f64, mat: Arc<Material>) -> Self {
         Self {
             y0,
             y1,
@@ -616,7 +616,7 @@ impl<M: Material> YzRect<M> {
     }
 }
 
-impl<M: Material> Hittable for YzRect<M> {
+impl Hittable for YzRect {
     fn hit(&self, r: Ray, t_min: f64, t_max: f64) -> Option<Hitrec> {
         let t = (self.k - r.origin().x()) / r.diraction().x();
         if t < t_min || t > t_max {
@@ -629,7 +629,7 @@ impl<M: Material> Hittable for YzRect<M> {
             return None;
         }
 
-        let mut rec = Hitrec::new(&(self.mat));
+        let mut rec = Hitrec::new(self.mat.clone());
         rec.u = (y - self.y0) / (self.y1 - self.y0);
         rec.v = (z - self.z0) / (self.z1 - self.z0);
         rec.t = t;
@@ -644,5 +644,42 @@ impl<M: Material> Hittable for YzRect<M> {
             Vec3::new(self.k - lit, self.y0, self.z0),
             Vec3::new(self.k + lit, self.y1, self.z1),
         ))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Boxes {
+    box_min: Vec3,
+    box_max: Vec3,
+    sides: Hitlist,
+}
+
+impl Boxes {
+    pub fn new (p0: Vec3, p1: Vec3, mat: Arc<Material>) -> Self {
+        let mut list = Hitlist::new();
+
+        list.add(Arc::new(XyRect::new(p0.x(), p1.x(), p0.y(), p1.y(), p1.z(), mat.clone())));
+        list.add(Arc::new(XyRect::new(p0.x(), p1.x(), p0.y(), p1.y(), p0.z(), mat.clone())));
+        
+        list.add(Arc::new(XzRect::new(p0.x(), p1.x(), p0.z(), p1.z(), p1.y(), mat.clone())));
+        list.add(Arc::new(XzRect::new(p0.x(), p1.x(), p0.z(), p1.z(), p0.y(), mat.clone())));
+        
+        list.add(Arc::new(YzRect::new(p0.y(), p1.y(), p0.z(), p1.z(), p1.x(), mat.clone())));
+        list.add(Arc::new(YzRect::new(p0.y(), p1.y(), p0.z(), p1.z(), p0.x(), mat.clone())));
+
+        Self {
+            box_min: p0,
+            box_max: p1,
+            sides: list,
+        }
+    }
+}
+
+impl Hittable for Boxes {
+    fn hit(&self, r: Ray, t_min: f64, t_max: f64) -> Option<Hitrec> {
+        self.sides.hit(r.clone(), t_min, t_max)
+    }
+    fn bebox(&self, t0: f64, t1: f64) -> Option<AABB> {
+        Some(AABB::new(self.box_min.clone(), self.box_max.clone()))
     }
 }

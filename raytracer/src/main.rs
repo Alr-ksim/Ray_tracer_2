@@ -61,7 +61,7 @@ pub fn random_scene() -> Hitlist {
 
     let c1 = Color::new(0.2, 0.3, 0.1);
     let c2 = Color::new(0.9, 0.9, 0.9);
-    let mat_g: Lamber = Lamber::new(Arc::new(texture::CheckerTexture::cnew(c1, c2))); // 0.5
+    let mat_g = Arc::new(Lamber::new(Arc::new(texture::CheckerTexture::cnew(c1, c2)))); // 0.5
     let arc_g = Arc::new(Sphere::new(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
@@ -83,7 +83,7 @@ pub fn random_scene() -> Hitlist {
             if (ct.clone() - Vec3::new(4.0, 0.2, 0.0)).length() > 0.9 {
                 if chmat < 0.8 {
                     let lbc: Color = Color::elemul(Color::randv(), Color::randv());
-                    let mat: Lamber = Lamber::cnew(lbc);
+                    let mat = Arc::new(Lamber::cnew(lbc));
                     let ct2: Vec3 = ct.clone() + Vec3::new(0.0, randf(0.0, 0.5), 0.0);
                     let arc_s = Arc::new(MovingSphere::new(
                         ct.clone(),
@@ -91,18 +91,18 @@ pub fn random_scene() -> Hitlist {
                         0.0,
                         1.0,
                         0.2,
-                        mat,
+                        mat.clone(),
                     ));
                     list.add(arc_s);
                 } else if chmat < 0.95 {
                     let lbc: Color = Color::randvr(0.5, 1.0);
                     let fuzz: f64 = randf(0.0, 0.5); //0.0 -> 0.5
-                    let mat: Metal = Metal::new(lbc, fuzz);
-                    let arc_s = Arc::new(Sphere::new(ct.clone(), 0.2, mat));
+                    let mat = Arc::new(Metal::new(lbc, fuzz));
+                    let arc_s = Arc::new(Sphere::new(ct.clone(), 0.2, mat.clone()));
                     list.add(arc_s);
                 } else {
-                    let mat: Dielectric = Dielectric::new(1.5);
-                    let arc_s = Arc::new(Sphere::new(ct.clone(), 0.2, mat));
+                    let mat = Arc::new(Dielectric::new(1.5));
+                    let arc_s = Arc::new(Sphere::new(ct.clone(), 0.2, mat.clone()));
                     list.add(arc_s);
                 }
             }
@@ -111,16 +111,16 @@ pub fn random_scene() -> Hitlist {
         a += 1;
     }
 
-    let mat_1: Dielectric = Dielectric::new(1.5);
-    let arc_s1 = Arc::new(Sphere::new(Vec3::new(0.0, 1.0, 0.0), 1.0, mat_1));
+    let mat_1 = Arc::new(Dielectric::new(1.5));
+    let arc_s1 = Arc::new(Sphere::new(Vec3::new(0.0, 1.0, 0.0), 1.0, mat_1.clone()));
     list.add(arc_s1);
 
-    let mat_2: Lamber = Lamber::cnew(Color::new(0.4, 0.2, 0.1));
-    let arc_s2 = Arc::new(Sphere::new(Vec3::new(-4.0, 1.0, 0.0), 1.0, mat_2));
+    let mat_2 = Arc::new(Lamber::cnew(Color::new(0.4, 0.2, 0.1)));
+    let arc_s2 = Arc::new(Sphere::new(Vec3::new(-4.0, 1.0, 0.0), 1.0, mat_2.clone()));
     list.add(arc_s2);
 
-    let mat_3: Metal = Metal::new(Color::new(0.7, 0.6, 0.5), 0.0);
-    let arc_s3 = Arc::new(Sphere::new(Vec3::new(4.0, 1.0, 0.0), 1.0, mat_3));
+    let mat_3 = Arc::new(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0));
+    let arc_s3 = Arc::new(Sphere::new(Vec3::new(4.0, 1.0, 0.0), 1.0, mat_3.clone()));
     list.add(arc_s3);
 
     list
@@ -132,7 +132,7 @@ pub fn two_sphere() -> Hitlist {
     let c1 = Color::new(0.2, 0.3, 0.1);
     let c2 = Color::new(0.9, 0.9, 0.9);
     let checker = Arc::new(texture::CheckerTexture::cnew(c1, c2));
-    let mat = Lamber::new(checker);
+    let mat = Arc::new(Lamber::new(checker));
 
     let arc_1 = Arc::new(Sphere::new(Vec3::new(0.0, -10.0, 0.0), 10.0, mat.clone()));
     let arc_2 = Arc::new(Sphere::new(Vec3::new(0.0, 10.0, 0.0), 10.0, mat.clone()));
@@ -146,7 +146,7 @@ pub fn two_perlin() -> Hitlist {
     let mut list = Hitlist::new();
 
     let pertext = Arc::new(texture::NoiseTexture::new(4.0));
-    let mat = Lamber::new(pertext);
+    let mat = Arc::new(Lamber::new(pertext));
 
     let arc_1 = Arc::new(Sphere::new(
         Vec3::new(0.0, -1000.0, 0.0),
@@ -165,9 +165,9 @@ pub fn earth() -> Hitlist {
     let path = Path::new("earthmap.jpg");
 
     let eartext = Arc::new(texture::ImageTexture::new(&path));
-    let mat = Lamber::new(eartext);
+    let mat = Arc::new(Lamber::new(eartext));
 
-    let arc_s = Arc::new(Sphere::new(Vec3::zero(), 2.0, mat));
+    let arc_s = Arc::new(Sphere::new(Vec3::zero(), 2.0, mat.clone()));
     list.add(arc_s);
 
     list
@@ -177,8 +177,8 @@ pub fn simple_light() -> Hitlist {
     let mut list = Hitlist::new();
 
     let pertext = Arc::new(texture::NoiseTexture::new(4.0));
-    let mat = Lamber::new(pertext);
-    let diffmat = DiffuseLight::cnew(Color::new(4.0, 4.0, 4.0));
+    let mat = Arc::new(Lamber::new(pertext));
+    let diffmat = Arc::new(DiffuseLight::cnew(Color::new(4.0, 4.0, 4.0)));
 
     let arc_1 = Arc::new(Sphere::new(
         Vec3::new(0.0, -1000.0, 0.0),
@@ -204,10 +204,10 @@ pub fn simple_light() -> Hitlist {
 pub fn cornell_box() -> Hitlist {
     let mut list = Hitlist::new();
 
-    let red = Lamber::cnew(Color::new(0.65, 0.05, 0.05));
-    let white = Lamber::cnew(Color::new(0.73, 0.73, 0.73));
-    let green = Lamber::cnew(Color::new(0.12, 0.45, 0.15));
-    let light = DiffuseLight::cnew(Color::new(15.0, 15.0, 15.0));
+    let red = Arc::new(Lamber::cnew(Color::new(0.65, 0.05, 0.05)));
+    let white = Arc::new(Lamber::cnew(Color::new(0.73, 0.73, 0.73)));
+    let green = Arc::new(Lamber::cnew(Color::new(0.12, 0.45, 0.15)));
+    let light = Arc::new(DiffuseLight::cnew(Color::new(15.0, 15.0, 15.0)));
 
     let arc_1 = Arc::new(shapes::YzRect::new(
         0.0,
@@ -257,6 +257,16 @@ pub fn cornell_box() -> Hitlist {
         555.0,
         white.clone(),
     ));
+    let arc_7 = Arc::new(shapes::Boxes::new(
+        Vec3::new(130.0, 0.0, 65.0),
+        Vec3::new(295.0, 165.0, 230.0),
+        white.clone(),
+    ));
+    let arc_8 = Arc::new(shapes::Boxes::new(
+        Vec3::new(265.0, 0.0, 295.0),
+        Vec3::new(430.0, 330.0, 460.0),
+        white.clone(),
+    ));
 
     list.add(arc_1);
     list.add(arc_2);
@@ -264,6 +274,8 @@ pub fn cornell_box() -> Hitlist {
     list.add(arc_4);
     list.add(arc_5);
     list.add(arc_6);
+    list.add(arc_7);
+    list.add(arc_8);
 
     list
 }
