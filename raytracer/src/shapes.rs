@@ -9,7 +9,7 @@ use std::ops::RemAssign;
 use std::sync::Arc;
 use std::vec::Vec;
 
-#[derive(Clone, Debug, Copy)]
+#[derive(Clone, Debug)]
 pub struct Hitrec<'a> {
     pub p: Vec3,
     pub nf: Vec3,
@@ -482,5 +482,59 @@ impl Hittable for BvhNode {
 
     fn bebox(&self, t0: f64, t1: f64) -> Option<AABB> {
         Some(self.curbox.clone())
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct XyRect<M: Material> {
+    x0: f64,
+    x1: f64,
+    y0: f64,
+    y1: f64,
+    k: f64,
+    mat: M,
+}
+
+impl<M: Material> XyRect<M> {
+    pub fn new(x0: f64, x1: f64, y0: f64, y1: f64, k: f64, mat: M) -> Self {
+        Self {
+            x0,
+            x1,
+            y0,
+            y1,
+            k,
+            mat,
+        }
+    }
+}
+
+impl<M: Material> Hittable for XyRect<M> {
+    fn hit(&self, r: Ray, t_min: f64, t_max: f64) -> Option<Hitrec> {
+        let t = (self.k - r.origin().z()) / r.diraction().z();
+        if t < t_min || t > t_max {
+            return None;
+        }
+
+        let x = r.origin().x() + t * r.diraction().x();
+        let y = r.origin().y() + t * r.diraction().y();
+        if x < self.x0 || x > self.x1 || y < self.y0 || y > self.y1 {
+            return None;
+        }
+
+        let mut rec = Hitrec::new(&(self.mat));
+        rec.u = (x - self.x0) / (self.x1 - self.x0);
+        rec.v = (y - self.y0) / (self.y1 - self.y0);
+        rec.t = t;
+        rec.set_face(r.clone(), Vec3::new(0.0, 0.0, 1.0));
+        rec.p = r.at(t);
+
+        Some(rec)
+    }
+    fn bebox(&self, t0: f64, t1: f64) -> Option<AABB> {
+        let lit = 0.0001;
+        Some(AABB::new(
+            Vec3::new(self.x0, self.y0, self.k - lit),
+            Vec3::new(self.x1, self.y1, self.k + lit),
+        ))
     }
 }

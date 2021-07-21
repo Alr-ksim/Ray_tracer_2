@@ -12,6 +12,9 @@ use std::sync::Arc;
 
 pub trait Material: Debug {
     fn scatter(&self, r_in: Ray, rec: Hitrec, att: &mut Color, scat: &mut Ray) -> bool;
+    fn emitted(&self, u: f64, v: f64, p: &Vec3) -> Color {
+        Color::zero()
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -131,5 +134,29 @@ impl Material for Dielectric {
             }
         }
         true
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct DiffuseLight {
+    emit: Arc<Texture>,
+}
+
+impl DiffuseLight {
+    pub fn new(emit: Arc<Texture>) -> Self {
+        Self { emit }
+    }
+    pub fn cnew(c: Color) -> Self {
+        let arc = Arc::new(texture::SolidColor::new(c));
+        Self { emit: arc }
+    }
+}
+
+impl Material for DiffuseLight {
+    fn scatter(&self, r_in: Ray, rec: Hitrec, att: &mut Color, scat: &mut Ray) -> bool {
+        false
+    }
+    fn emitted(&self, u: f64, v: f64, p: &Vec3) -> Color {
+        self.emit.value(u, v, p)
     }
 }

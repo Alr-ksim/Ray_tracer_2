@@ -15,6 +15,7 @@ pub mod vec3;
 use camera::Camera;
 use color::Color;
 use material::Dielectric;
+use material::DiffuseLight;
 use material::Lamber;
 use material::Material;
 use material::Metal;
@@ -32,26 +33,26 @@ use std::sync::Arc;
 use tools::randf;
 use vec3::Vec3;
 
-pub fn ray_color(r: Ray, list: &Hitlist, depth: i32) -> Color {
+pub fn ray_color(r: Ray, background: &Color, list: &Hitlist, depth: i32) -> Color {
     if depth <= 0 {
         return Color::new(0.0, 0.0, 0.0);
     }
     match list.hit(r.clone(), 0.001, tools::INF) {
         Some(rec) => {
-            let tem: Vec3 = Vec3::new(0.0, 0.0, 0.0);
-            let mut scat: Ray = Ray::new(tem.clone(), tem.clone(), 0.0);
-            let mut att: Color = Color::new(0.0, 0.0, 0.0);
+            let mut scat: Ray = Ray::new(Vec3::zero(), Vec3::zero(), 0.0);
+            let mut att: Color = Color::zero();
+            let emit = rec.mat.emitted(rec.u, rec.v, &rec.p);
             if rec.mat.scatter(r.clone(), rec.clone(), &mut att, &mut scat) {
-                return Color::elemul(att.clone(), ray_color(scat.clone(), list, depth - 1));
+                return emit.clone()
+                    + Color::elemul(
+                        att.clone(),
+                        ray_color(scat.clone(), background, list, depth - 1),
+                    );
             } else {
-                return Color::new(0.0, 0.0, 0.0);
+                emit
             }
         }
-        None => {
-            let unit_dir = r.diraction().unit();
-            let t = 0.5 * (unit_dir.y() + 1.0);
-            Color::new(1.0, 1.0, 1.0) * (1.0 - t) + Color::new(0.5, 0.7, 1.0) * t
-        }
+        None => *background,
     }
 }
 
@@ -172,6 +173,34 @@ pub fn earth() -> Hitlist {
     list
 }
 
+pub fn simple_light() -> Hitlist {
+    let mut list = Hitlist::new();
+
+    let pertext = Arc::new(texture::NoiseTexture::new(4.0));
+    let mat = Lamber::new(pertext);
+    let diffmat = DiffuseLight::cnew(Color::new(4.0, 4.0, 4.0));
+
+    let arc_1 = Arc::new(Sphere::new(
+        Vec3::new(0.0, -1000.0, 0.0),
+        1000.0,
+        mat.clone(),
+    ));
+    let arc_2 = Arc::new(Sphere::new(Vec3::new(0.0, 2.0, 0.0), 2.0, mat.clone()));
+    let arc_3 = Arc::new(shapes::XyRect::new(
+        3.0,
+        5.0,
+        1.0,
+        3.0,
+        -2.0,
+        diffmat.clone(),
+    ));
+    list.add(arc_1);
+    list.add(arc_2);
+    list.add(arc_3);
+
+    list
+}
+
 fn main() {
     let mut file = File::create("image.ppm").unwrap();
 
@@ -191,12 +220,14 @@ fn main() {
     let mut vup = Vec3::new(0.0, 1.0, 0.0);
     let mut vfov = 40.0;
     let mut aperture = 0.0;
-    let mut dist_to_focus: f64 = 10.0;
+    let mut dist_to_focus = 10.0;
+    let mut backgound = Color::zero();
 
-    const TAC: i32 = 3;
+    const TAC: i32 = 4;
     match TAC {
         0 => {
             list = random_scene();
+            backgound = Color::new(0.70, 0.80, 1.00);
             lookfrom = Vec3::new(13.0, 2.0, 3.0);
             lookat = Vec3::new(0.0, 0.0, 0.0);
             vfov = 20.0;
@@ -204,6 +235,7 @@ fn main() {
         }
         1 => {
             list = two_sphere();
+            backgound = Color::new(0.70, 0.80, 1.00);
             lookfrom = Vec3::new(13.0, 2.0, 3.0);
             lookat = Vec3::new(0.0, 0.0, 0.0);
             vfov = 20.0;
@@ -211,6 +243,7 @@ fn main() {
         }
         2 => {
             list = two_perlin();
+            backgound = Color::new(0.70, 0.80, 1.00);
             lookfrom = Vec3::new(13.0, 2.0, 3.0);
             lookat = Vec3::new(0.0, 0.0, 0.0);
             vfov = 20.0;
@@ -218,8 +251,17 @@ fn main() {
         }
         3 => {
             list = earth();
+            backgound = Color::new(0.70, 0.80, 1.00);
             lookfrom = Vec3::new(13.0, 2.0, 3.0);
             lookat = Vec3::new(0.0, 0.0, 0.0);
+            vfov = 20.0;
+            aperture = 0.0;
+        }
+        4 => {
+            list = simple_light();
+            backgound = Color::zero();
+            lookfrom = Vec3::new(26.0, 3.0, 6.0);
+            lookat = Vec3::new(0.0, 2.0, 0.0);
             vfov = 20.0;
             aperture = 0.0;
         }
@@ -249,7 +291,7 @@ fn main() {
                 let u: f64 = (i as f64 + randf(0.0, 1.0)) / ((I_WID - 1) as f64);
                 let v: f64 = (j as f64 + randf(0.0, 1.0)) / ((I_HIT - 1) as f64);
                 let r: Ray = cam.get_ray(u, v);
-                color += ray_color(r, &list, MAXDEEP);
+                color += ray_color(r, &backgound, &list, MAXDEEP);
                 s += 1;
             }
             let pixel = img.get_pixel_mut(i as u32, (I_HIT - j - 1) as u32);
