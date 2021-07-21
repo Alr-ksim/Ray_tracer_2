@@ -261,8 +261,8 @@ impl AABB {
         let mut t1 = 0.0;
 
         let inv_d: f64 = r.diraction().x();
-        t0 = (self.min().x() - r.origin().x()) * inv_d;
-        t1 = (self.max().x() - r.origin().x()) * inv_d;
+        t0 = (self.min().x() - r.origin().x()) / inv_d;
+        t1 = (self.max().x() - r.origin().x()) / inv_d;
         if inv_d < 0.0 {
             let tem = t0;
             t0 = t1;
@@ -275,8 +275,8 @@ impl AABB {
         }
 
         let inv_d: f64 = r.diraction().y();
-        t0 = (self.min().y() - r.origin().y()) * inv_d;
-        t1 = (self.max().y() - r.origin().y()) * inv_d;
+        t0 = (self.min().y() - r.origin().y()) / inv_d;
+        t1 = (self.max().y() - r.origin().y()) / inv_d;
         if inv_d < 0.0 {
             let tem = t0;
             t0 = t1;
@@ -289,8 +289,8 @@ impl AABB {
         }
 
         let inv_d: f64 = r.diraction().z();
-        t0 = (self.min().z() - r.origin().z()) * inv_d;
-        t1 = (self.max().z() - r.origin().z()) * inv_d;
+        t0 = (self.min().z() - r.origin().z()) / inv_d;
+        t1 = (self.max().z() - r.origin().z()) / inv_d;
         if inv_d < 0.0 {
             let tem = t0;
             t0 = t1;
@@ -369,7 +369,7 @@ impl Hittable for Hitlist {
 pub struct BvhNode {
     left: Arc<Hittable>,
     right: Arc<Hittable>,
-    curbox: AABB,
+    pub curbox: AABB,
 }
 
 impl BvhNode {

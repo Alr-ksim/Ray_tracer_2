@@ -50,12 +50,13 @@ impl World {
     }
 }
 
-pub fn ray_color(r: Ray, background: &Color, list: &Hitlist, depth: i32) -> Color {
+pub fn ray_color(r: Ray, background: &Color, list: &shapes::BvhNode, depth: i32) -> Color {
     if depth <= 0 {
         return Color::new(0.0, 0.0, 0.0);
     }
     match list.hit(r.clone(), 0.001, tools::INF) {
         Some(rec) => {
+            //println!("recing...");
             let mut scat: Ray = Ray::new(Vec3::zero(), Vec3::zero(), 0.0);
             let mut att: Color = Color::zero();
             let emit = rec.mat.emitted(rec.u, rec.v, &rec.p);
@@ -349,7 +350,7 @@ fn main() {
     let mut dist_to_focus = 10.0;
     let mut backgound = Color::zero();
 
-    const TAC: i32 = 5;
+    const TAC: i32 = 0;
     match TAC {
         0 => {
             list = random_scene();
@@ -425,11 +426,13 @@ fn main() {
 
     let world = Arc::new(World::new(i_hit as u32));
 
+    let bvh = shapes::BvhNode::fnew(&mut list, 0.0, 1.0);
+
     // file.write(format!("P3\n{} {}\n255\n", i_wid, i_hit).as_bytes());
     for i in 0..n_jobs {
         let tx = tx.clone();
         let world_ptr = world.clone();
-        let t_list = list.clone();
+        let t_list = bvh.clone();
         pool.execute(move || {
             let row_begin = i_hit as usize * i / n_jobs;
             let row_end = i_hit as usize * (i + 1) / n_jobs;
