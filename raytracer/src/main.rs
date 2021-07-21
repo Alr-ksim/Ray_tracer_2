@@ -350,7 +350,7 @@ fn main() {
     let mut dist_to_focus = 10.0;
     let mut backgound = Color::zero();
 
-    const TAC: i32 = 0;
+    const TAC: i32 = 5;
     match TAC {
         0 => {
             list = random_scene();
