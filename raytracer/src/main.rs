@@ -320,6 +320,123 @@ pub fn cornell_box() -> Hitlist {
     list
 }
 
+pub fn final_scene() -> Hitlist {
+    let mut ground = Hitlist::new();
+    let mat_g = Arc::new(Lamber::cnew(Color::new(0.48, 0.83, 0.53)));
+
+    let boxes_per_side: usize = 20;
+    for i in 0..boxes_per_side {
+        for j in 0..boxes_per_side {
+            let w = 100.0;
+            let x0 = -1000.0 + i as f64 * w;
+            let z0 = -1000.0 + j as f64 * w;
+            let y0 = 0.0;
+            let x1 = x0 + w;
+            let y1 = randf(1.0, 101.0);
+            let z1 = z0 + w;
+
+            ground.add(Arc::new(shapes::Boxes::new(
+                Vec3::new(x0, y0, z0),
+                Vec3::new(x1, y1, z1),
+                mat_g.clone(),
+            )));
+        }
+    }
+
+    let mut list = Hitlist::new();
+    list.add(Arc::new(shapes::BvhNode::fnew(&mut ground, 0.0, 1.0)));
+
+    let light = Arc::new(DiffuseLight::cnew(Color::new(7.0, 7.0, 7.0)));
+    list.add(Arc::new(shapes::XzRect::new(
+        123.0,
+        423.0,
+        147.0,
+        412.0,
+        554.0,
+        light.clone(),
+    )));
+
+    let ct1 = Vec3::new(400.0, 400.0, 200.0);
+    let ct2 = ct1.clone() + Vec3::new(30.0, 0.0, 0.0);
+    let moving_mat = Arc::new(Lamber::cnew(Color::new(0.7, 0.3, 0.1)));
+    list.add(Arc::new(MovingSphere::new(
+        ct1,
+        ct2,
+        0.0,
+        1.0,
+        50.0,
+        moving_mat.clone(),
+    )));
+
+    list.add(Arc::new(Sphere::new(
+        Vec3::new(260.0, 150.0, 45.0),
+        50.0,
+        Arc::new(Dielectric::new(1.5)),
+    )));
+    list.add(Arc::new(Sphere::new(
+        Vec3::new(0.0, 150.0, 145.0),
+        50.0,
+        Arc::new(Metal::new(Color::new(0.8, 0.8, 0.9), 1.0)),
+    )));
+
+    let mut boundary = Arc::new(Sphere::new(
+        Vec3::new(360.0, 150.0, 145.0),
+        70.0,
+        Arc::new(Dielectric::new(1.5)),
+    ));
+    list.add(boundary.clone());
+    list.add(Arc::new(shapes::ConstantMedium::cnew(
+        boundary.clone(),
+        0.2,
+        Color::new(0.2, 0.4, 0.9),
+    )));
+    boundary = Arc::new(Sphere::new(
+        Vec3::zero(),
+        5000.0,
+        Arc::new(Dielectric::new(1.5)),
+    ));
+    list.add(Arc::new(shapes::ConstantMedium::cnew(
+        boundary.clone(),
+        0.0001,
+        Color::ones(),
+    )));
+
+    let path = Path::new("earthmap.jpg");
+    let emat = Arc::new(Lamber::new(Arc::new(texture::ImageTexture::new(&path))));
+    list.add(Arc::new(Sphere::new(
+        Vec3::new(400.0, 200.0, 400.0),
+        100.0,
+        emat.clone(),
+    )));
+    let pertext = Arc::new(texture::NoiseTexture::new(0.1));
+    list.add(Arc::new(Sphere::new(
+        Vec3::new(220.0, 280.0, 300.0),
+        80.0,
+        Arc::new(Lamber::new(pertext.clone())),
+    )));
+
+    let mut cube = Hitlist::new();
+    let white = Arc::new(Lamber::cnew(Color::new(0.73, 0.73, 0.73)));
+    let ns: usize = 1000;
+    for i in 0..ns {
+        cube.add(Arc::new(Sphere::new(
+            Vec3::randvr(0.0, 165.0),
+            10.0,
+            white.clone(),
+        )));
+    }
+
+    list.add(Arc::new(shapes::Translate::new(
+        Arc::new(shapes::RotateY::new(
+            Arc::new(shapes::BvhNode::fnew(&mut cube, 0.0, 1.0)),
+            15.0,
+        )),
+        Vec3::new(-100.0, 270.0, 395.0),
+    )));
+
+    list
+}
+
 fn main() {
     // let mut file = File::create("image.ppm").unwrap();
     let is_ci = match std::env::var("CI") {
@@ -337,8 +454,8 @@ fn main() {
     let mut as_ratio: f64 = 16.0 / 9.0;
     let mut i_wid: i32 = 400;
     let mut i_hit: i32 = (i_wid as f64 / as_ratio) as i32;
-    const SAMPLES: i32 = 500; //500
-    const MAXDEEP: i32 = 50; //50
+    const SAMPLES: i32 = 10000; //500
+    const MAXDEEP: i32 = 100; //50
 
     let mut list = Hitlist::new();
 
@@ -350,7 +467,7 @@ fn main() {
     let mut dist_to_focus = 10.0;
     let mut backgound = Color::zero();
 
-    const TAC: i32 = 5;
+    const TAC: i32 = 6;
     match TAC {
         0 => {
             list = random_scene();
@@ -400,6 +517,17 @@ fn main() {
             list = cornell_box();
             backgound = Color::zero();
             lookfrom = Vec3::new(278.0, 278.0, -800.0);
+            lookat = Vec3::new(278.0, 278.0, 0.0);
+            vfov = 40.0;
+            aperture = 0.0;
+        }
+        6 => {
+            list = final_scene();
+            as_ratio = 1.0;
+            i_wid = 800;
+            i_hit = 800;
+            backgound = Color::zero();
+            lookfrom = Vec3::new(478.0, 278.0, -600.0);
             lookat = Vec3::new(278.0, 278.0, 0.0);
             vfov = 40.0;
             aperture = 0.0;
