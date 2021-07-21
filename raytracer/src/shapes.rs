@@ -655,17 +655,59 @@ pub struct Boxes {
 }
 
 impl Boxes {
-    pub fn new (p0: Vec3, p1: Vec3, mat: Arc<Material>) -> Self {
+    pub fn new(p0: Vec3, p1: Vec3, mat: Arc<Material>) -> Self {
         let mut list = Hitlist::new();
 
-        list.add(Arc::new(XyRect::new(p0.x(), p1.x(), p0.y(), p1.y(), p1.z(), mat.clone())));
-        list.add(Arc::new(XyRect::new(p0.x(), p1.x(), p0.y(), p1.y(), p0.z(), mat.clone())));
-        
-        list.add(Arc::new(XzRect::new(p0.x(), p1.x(), p0.z(), p1.z(), p1.y(), mat.clone())));
-        list.add(Arc::new(XzRect::new(p0.x(), p1.x(), p0.z(), p1.z(), p0.y(), mat.clone())));
-        
-        list.add(Arc::new(YzRect::new(p0.y(), p1.y(), p0.z(), p1.z(), p1.x(), mat.clone())));
-        list.add(Arc::new(YzRect::new(p0.y(), p1.y(), p0.z(), p1.z(), p0.x(), mat.clone())));
+        list.add(Arc::new(XyRect::new(
+            p0.x(),
+            p1.x(),
+            p0.y(),
+            p1.y(),
+            p1.z(),
+            mat.clone(),
+        )));
+        list.add(Arc::new(XyRect::new(
+            p0.x(),
+            p1.x(),
+            p0.y(),
+            p1.y(),
+            p0.z(),
+            mat.clone(),
+        )));
+
+        list.add(Arc::new(XzRect::new(
+            p0.x(),
+            p1.x(),
+            p0.z(),
+            p1.z(),
+            p1.y(),
+            mat.clone(),
+        )));
+        list.add(Arc::new(XzRect::new(
+            p0.x(),
+            p1.x(),
+            p0.z(),
+            p1.z(),
+            p0.y(),
+            mat.clone(),
+        )));
+
+        list.add(Arc::new(YzRect::new(
+            p0.y(),
+            p1.y(),
+            p0.z(),
+            p1.z(),
+            p1.x(),
+            mat.clone(),
+        )));
+        list.add(Arc::new(YzRect::new(
+            p0.y(),
+            p1.y(),
+            p0.z(),
+            p1.z(),
+            p0.x(),
+            mat.clone(),
+        )));
 
         Self {
             box_min: p0,
@@ -681,5 +723,145 @@ impl Hittable for Boxes {
     }
     fn bebox(&self, t0: f64, t1: f64) -> Option<AABB> {
         Some(AABB::new(self.box_min.clone(), self.box_max.clone()))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Translate {
+    shape: Arc<Hittable>,
+    offset: Vec3,
+}
+
+impl Translate {
+    pub fn new(shape: Arc<Hittable>, offset: Vec3) -> Self {
+        Self { shape, offset }
+    }
+    pub fn offset(&self) -> Vec3 {
+        self.offset.clone()
+    }
+}
+
+impl Hittable for Translate {
+    fn hit(&self, r: Ray, t_min: f64, t_max: f64) -> Option<Hitrec> {
+        let moved_r = Ray::new(r.origin() - self.offset(), r.diraction(), r.time());
+
+        match self.shape.hit(moved_r.clone(), t_min, t_max) {
+            Some(mut rec) => {
+                rec.p += self.offset();
+                rec.set_face(moved_r.clone(), rec.nf());
+                Some(rec)
+            }
+            None => None,
+        }
+    }
+    fn bebox(&self, t0: f64, t1: f64) -> Option<AABB> {
+        match self.shape.bebox(t0, t1) {
+            Some(out_box) => Some(AABB::new(
+                out_box.min() + self.offset(),
+                out_box.max() + self.offset(),
+            )),
+            None => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct RotateY {
+    shape: Arc<Hittable>,
+    sin_theta: f64,
+    cos_theta: f64,
+    hasbox: bool,
+    bbox: AABB,
+}
+
+impl RotateY {
+    pub fn new(arc: Arc<Hittable>, angle: f64) -> Self {
+        let radians = tools::dtr(angle);
+        let sin_t = radians.sin();
+        let cos_t = radians.cos();
+        let mut flag = false;
+        let mut bx = AABB::emnew();
+        if let Some(t_bx) = arc.bebox(0.0, 1.0) {
+            bx = t_bx;
+            flag = true;
+        }
+
+        let mut mn = Vec3::new(tools::INF, tools::INF, tools::INF);
+        let mut mx = Vec3::new(-tools::INF, -tools::INF, -tools::INF);
+
+        for i in 0..2 {
+            for j in 0..2 {
+                for k in 0..2 {
+                    let di = i as f64;
+                    let dj = j as f64;
+                    let dk = k as f64;
+                    let x = di * bx.max().x() + (1.0 - di) * bx.min().x();
+                    let y = dj * bx.max().y() + (1.0 - dj) * bx.min().y();
+                    let z = dk * bx.max().z() + (1.0 - dk) * bx.min().z();
+
+                    let newx = cos_t * x + sin_t * z;
+                    let newz = -sin_t * x + cos_t * z;
+
+                    let tes = Vec3::new(newx, y, newz);
+                    mn.x = if mn.x < tes.x { mn.x } else { tes.x };
+                    mx.x = if mx.x > tes.x { mx.x } else { tes.x };
+                    mn.y = if mn.y < tes.y { mn.y } else { tes.y };
+                    mx.y = if mx.y > tes.y { mx.y } else { tes.y };
+                    mn.z = if mn.z < tes.z { mn.z } else { tes.z };
+                    mx.z = if mx.z > tes.z { mx.z } else { tes.z };
+                }
+            }
+        }
+
+        Self {
+            shape: arc,
+            sin_theta: sin_t,
+            cos_theta: cos_t,
+            hasbox: flag,
+            bbox: AABB::new(mn, mx),
+        }
+    }
+}
+
+impl Hittable for RotateY {
+    fn hit(&self, r: Ray, t_min: f64, t_max: f64) -> Option<Hitrec> {
+        let mut org = r.origin();
+        let mut dir = r.diraction();
+        let sin = self.sin_theta;
+        let cos = self.cos_theta;
+
+        org.x = cos * r.origin().x() - sin * r.origin().z();
+        org.z = sin * r.origin().x() + cos * r.origin().z();
+
+        dir.x = cos * r.diraction().x() - sin * r.diraction().z();
+        dir.z = sin * r.diraction().x() + cos * r.diraction().z();
+
+        let ror = Ray::new(org, dir, r.time());
+
+        match self.shape.hit(ror.clone(), t_min, t_max) {
+            Some(mut rec) => {
+                let mut p = rec.p();
+                let mut nf = rec.nf();
+
+                p.x = cos * rec.p().x() + sin * rec.p().z();
+                p.z = -sin * rec.p().x() + cos * rec.p().z();
+                nf.x = cos * rec.nf().x() + sin * rec.nf().z();
+                nf.z = -sin * rec.nf().x() + cos * rec.nf().z();
+
+                rec.p = p;
+                rec.set_face(ror.clone(), nf);
+
+                Some(rec)
+            }
+            None => None,
+        }
+    }
+
+    fn bebox(&self, t0: f64, t1: f64) -> Option<AABB> {
+        if self.hasbox {
+            Some(self.bbox.clone())
+        } else {
+            None
+        }
     }
 }

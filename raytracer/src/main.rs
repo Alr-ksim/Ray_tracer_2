@@ -257,15 +257,27 @@ pub fn cornell_box() -> Hitlist {
         555.0,
         white.clone(),
     ));
+
     let arc_7 = Arc::new(shapes::Boxes::new(
-        Vec3::new(130.0, 0.0, 65.0),
-        Vec3::new(295.0, 165.0, 230.0),
+        Vec3::new(0.0, 0.0, 0.0),
+        Vec3::new(165.0, 330.0, 165.0),
         white.clone(),
     ));
-    let arc_8 = Arc::new(shapes::Boxes::new(
+    let arc_7_1 = Arc::new(shapes::RotateY::new(arc_7.clone(), 15.0));
+    let arc_7_2 = Arc::new(shapes::Translate::new(
+        arc_7_1.clone(),
         Vec3::new(265.0, 0.0, 295.0),
-        Vec3::new(430.0, 330.0, 460.0),
+    ));
+
+    let arc_8 = Arc::new(shapes::Boxes::new(
+        Vec3::new(0.0, 0.0, 0.0),
+        Vec3::new(165.0, 165.0, 165.0),
         white.clone(),
+    ));
+    let arc_8_1 = Arc::new(shapes::RotateY::new(arc_8.clone(), -18.0));
+    let arc_8_2 = Arc::new(shapes::Translate::new(
+        arc_8_1.clone(),
+        Vec3::new(130.0, 0.0, 65.0),
     ));
 
     list.add(arc_1);
@@ -274,8 +286,8 @@ pub fn cornell_box() -> Hitlist {
     list.add(arc_4);
     list.add(arc_5);
     list.add(arc_6);
-    list.add(arc_7);
-    list.add(arc_8);
+    list.add(arc_7_2);
+    list.add(arc_8_2);
 
     list
 }
