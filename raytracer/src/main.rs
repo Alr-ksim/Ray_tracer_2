@@ -56,7 +56,6 @@ pub fn ray_color(r: Ray, background: &Color, list: &shapes::BvhNode, depth: i32)
     }
     match list.hit(r.clone(), 0.001, tools::INF) {
         Some(rec) => {
-            //println!("recing...");
             let mut scat: Ray = Ray::new(Vec3::zero(), Vec3::zero(), 0.0);
             let mut att: Color = Color::zero();
             let emit = rec.mat.emitted(rec.u, rec.v, &rec.p);
@@ -444,8 +443,9 @@ pub fn moon() -> Hitlist {
     let eartext = Arc::new(texture::ImageTexture::new(&path));
     let mat = Arc::new(DiffuseLight::new(eartext));
 
-    let arc_s = Arc::new(Sphere::new(Vec3::zero(), 2.0, mat.clone()));
+    let arc_s = Arc::new(Sphere::new(Vec3::new(0.0, 2.0, 0.0), 2.0, mat.clone()));
     list.add(arc_s);
+
 
     list
 }
@@ -466,7 +466,7 @@ fn main() {
     let mut as_ratio: f64 = 16.0 / 9.0;
     let mut i_wid: i32 = 400;
     let mut i_hit: i32 = (i_wid as f64 / as_ratio) as i32;
-    const SAMPLES: i32 = 5000; //500
+    const SAMPLES: i32 = 7000; //500
     const MAXDEEP: i32 = 50; //50
 
     let mut list = Hitlist::new();
