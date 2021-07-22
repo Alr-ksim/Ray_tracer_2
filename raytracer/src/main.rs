@@ -321,9 +321,7 @@ pub fn cornell_box() -> Hitlist {
 
 pub fn final_scene() -> Hitlist {
     let mut ground = Hitlist::new();
-    let path = Path::new("moonmap.jpg");
     let mat_g = Arc::new(Lamber::cnew(Color::new(0.48, 0.83, 0.53)));
-    let mat_g = Arc::new(Lamber::new(Arc::new(texture::ImageTexture::new(&path))));
 
     let boxes_per_side: usize = 20;
     for i in 0..boxes_per_side {
@@ -451,14 +449,25 @@ pub fn moon() -> Hitlist {
     list.add(arc_s);
 
     let mat_a = Arc::new(Lamber::new(Arc::new(texture::NoiseTexture::new(0.1))));
-    let arc_a = Arc::new(shapes::Boxes::new(Vec3::new(-1.5, -1.5, -1.5), Vec3::new(1.5, 1.5, 1.5), mat_a.clone()));
+    let arc_a = Arc::new(shapes::Boxes::new(
+        Vec3::new(-1.5, -1.5, -1.5),
+        Vec3::new(1.5, 1.5, 1.5),
+        mat_a.clone(),
+    ));
     let arc_a = Arc::new(shapes::RotateY::new(arc_a, 60.0));
     let arc_a = Arc::new(shapes::RotateZ::new(arc_a, 60.0));
     let arc_a = Arc::new(shapes::Translate::new(arc_a, Vec3::new(0.0, 0.0, 5.0)));
     list.add(arc_a);
 
-    let mat_b = Arc::new(DiffuseLight::cnew(Color::ones()*30.0));
-    let arc_b = Arc::new(shapes::XzRect::new(-4.0, 4.0, -4.0, 4.0, 9.0, mat_b.clone()));
+    let mat_b = Arc::new(DiffuseLight::cnew(Color::ones() * 30.0));
+    let arc_b = Arc::new(shapes::XzRect::new(
+        -4.0,
+        4.0,
+        -4.0,
+        4.0,
+        9.0,
+        mat_b.clone(),
+    ));
     list.add(arc_b);
 
     let mut boundary = Arc::new(Sphere::new(
@@ -475,6 +484,126 @@ pub fn moon() -> Hitlist {
 
     list
 }
+
+pub fn randc() -> Color {
+    let color1 = Color::new(0.714, 0.216, 0.027);
+    let color2 = Color::new(0.2, 0.561, 0.890);
+    let color3 = Color::new(0.929, 0.929, 0.161);
+    let color4 = Color::new(1.0, 1.0, 0.851);
+    let key = tools::randi(1, 4);
+    match key {
+        1 => color1,
+        2 => color2,
+        3 => color3,
+        _ => color4,
+    }
+}
+
+pub fn idiy() -> Hitlist {
+    let mut list = Hitlist::new();
+    let mat_g = Arc::new(Metal::new(Color::new(0.725, 0.478, 0.341), 0.3));
+    list.add(Arc::new(shapes::XzRect::new(
+        -1000.0, 1000.0, -1000.0, 1000.0, 0.0, mat_g,
+    )));
+
+    let mat_back = Arc::new(Metal::new(Color::ones(), 0.0));
+    list.add(Arc::new(shapes::YzRect::new(
+        0.0, 1000.0, -250.0, 250.0, 0.0, mat_back,
+    )));
+
+    let mat_left = Arc::new(Lamber::cnew(Color::new(0.48, 0.83, 0.53)));
+    let mat_right = Arc::new(Lamber::new(Arc::new(texture::NoiseTexture::new(0.2))));
+    let arc_l = Arc::new(shapes::YzRect::new(
+        0.0, 1000.0, -1000.0, 1000.0, 0.0, mat_left,
+    ));
+    let arc_l = Arc::new(shapes::Translate::new(
+        Arc::new(shapes::RotateY::new(arc_l, 5.0)),
+        Vec3::new(0.0, 0.0, -250.0),
+    ));
+    let arc_r = Arc::new(shapes::YzRect::new(
+        0.0, 1000.0, -1000.0, 1000.0, 0.0, mat_right,
+    ));
+    let arc_r = Arc::new(shapes::Translate::new(
+        Arc::new(shapes::RotateY::new(arc_r, -5.0)),
+        Vec3::new(0.0, 0.0, 250.0),
+    ));
+    list.add(arc_l);
+    list.add(arc_r);
+
+    let light = Arc::new(DiffuseLight::cnew(Color::ones()));
+    let arc_lit = Arc::new(shapes::XzRect::new(
+        50.0, 450.0, -200.0, 200.0, 500.0, light,
+    ));
+    list.add(arc_lit);
+
+    let mat_bas1 = Arc::new(Lamber::cnew(Color::new(1.0, 1.0, 0.851)));
+    let arc_bas1 = Arc::new(shapes::Boxes::new(
+        Vec3::new(-40.0, 0.0, -40.0),
+        Vec3::new(40.0, 40.0, 40.0),
+        mat_bas1,
+    ));
+    let arc_bas1 = Arc::new(shapes::Translate::new(
+        Arc::new(shapes::RotateY::new(arc_bas1, 60.0)),
+        Vec3::new(300.0, 0.0, 100.0),
+    ));
+    let brd_bas2 = Arc::new(shapes::Boxes::new(
+        Vec3::new(-20.0, 0.0, -20.0),
+        Vec3::new(20.0, 20.0, 20.0),
+        Arc::new(Dielectric::new(1.5)),
+    ));
+    let brd_bas2 = Arc::new(shapes::Translate::new(
+        Arc::new(shapes::RotateY::new(brd_bas2, -20.0)),
+        Vec3::new(300.0, 40.0, 100.0),
+    ));
+    let arc_bas2 = Arc::new(shapes::ConstantMedium::new(
+        brd_bas2.clone(),
+        0.2,
+        Arc::new(texture::NoiseTexture::new(1.0)),
+    ));
+    let path = Path::new("moonmap.jpg");
+    let moon_mat = Arc::new(DiffuseLight::new(Arc::new(texture::ImageTexture::new(
+        &path,
+    ))));
+    let arc_moon = Arc::new(Sphere::new(Vec3::zero(), 80.0, moon_mat));
+    let arc_moon = Arc::new(shapes::Translate::new(
+        arc_moon,
+        Vec3::new(300.0, 150.0, 100.0),
+    ));
+    list.add(arc_bas1);
+    list.add(brd_bas2);
+    list.add(arc_bas2);
+    list.add(arc_moon);
+
+    let arc_cube = Arc::new(shapes::Boxes::new(
+        Vec3::new(-50.0, -50.0, -50.0),
+        Vec3::new(50.0, 50.0, 50.0),
+        Arc::new(Dielectric::new(1.5)),
+    ));
+    let arc_cube = Arc::new(shapes::Translate::new(
+        Arc::new(shapes::RotateZ::new(
+            Arc::new(shapes::RotateY::new(arc_cube, 45.0)),
+            45.0,
+        )),
+        Vec3::new(200.0, 72.0, -100.0),
+    ));
+    let arc_cs = Arc::new(shapes::ConstantMedium::cnew(
+        arc_cube.clone(),
+        0.4,
+        Color::new(0.2, 0.561, 0.890),
+    ));
+
+    list.add(arc_cube);
+    list.add(arc_cs);
+
+    list.add(Arc::new(Sphere::new(
+        Vec3::new(280.0, 150.0, -80.0),
+        70.0,
+        Arc::new(Dielectric::new(1.5)),
+    )));
+
+    list
+}
+
 fn main() {
     // let mut file = File::create("image.ppm").unwrap();
     let is_ci = match std::env::var("CI") {
@@ -492,8 +621,8 @@ fn main() {
     let mut as_ratio: f64 = 16.0 / 9.0;
     let mut i_wid: i32 = 400;
     let mut i_hit: i32 = (i_wid as f64 / as_ratio) as i32;
-    const SAMPLES: i32 = 200; //500
-    const MAXDEEP: i32 = 20; //50
+    const SAMPLES: i32 = 3000; //500
+    const MAXDEEP: i32 = 50; //50
 
     let mut list = Hitlist::new();
 
@@ -505,7 +634,7 @@ fn main() {
     let mut dist_to_focus = 10.0;
     let mut backgound = Color::zero();
 
-    const TAC: i32 = 6;
+    const TAC: i32 = 8;
     match TAC {
         0 => {
             list = random_scene();
@@ -580,6 +709,17 @@ fn main() {
             lookfrom = Vec3::new(60.0, 2.0, 0.0);
             lookat = Vec3::new(0.0, 0.0, 0.0);
             vfov = 20.0;
+            aperture = 0.0;
+        }
+        8 => {
+            list = idiy();
+            as_ratio = 1.0;
+            i_hit = 800;
+            i_wid = 800;
+            backgound = Color::zero();
+            lookfrom = Vec3::new(1000.0, 200.0, 0.0);
+            lookat = Vec3::new(600.0, 210.0, 0.0);
+            vfov = 40.0;
             aperture = 0.0;
         }
         _ => {}
