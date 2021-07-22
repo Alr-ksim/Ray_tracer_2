@@ -467,7 +467,7 @@ fn main() {
     let mut i_wid: i32 = 400;
     let mut i_hit: i32 = (i_wid as f64 / as_ratio) as i32;
     const SAMPLES: i32 = 3000; //500
-    const MAXDEEP: i32 = 10; //50
+    const MAXDEEP: i32 = 50; //50
 
     let mut list = Hitlist::new();
 
