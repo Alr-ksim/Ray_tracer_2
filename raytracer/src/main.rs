@@ -437,6 +437,18 @@ pub fn final_scene() -> Hitlist {
     list
 }
 
+pub fn moon() -> Hitlist {
+    let mut list = Hitlist::new();
+    let path = Path::new("moonmap.jpg");
+
+    let eartext = Arc::new(texture::ImageTexture::new(&path));
+    let mat = Arc::new(DiffuseLight::new(eartext));
+
+    let arc_s = Arc::new(Sphere::new(Vec3::zero(), 2.0, mat.clone()));
+    list.add(arc_s);
+
+    list
+}
 fn main() {
     // let mut file = File::create("image.ppm").unwrap();
     let is_ci = match std::env::var("CI") {
@@ -454,7 +466,7 @@ fn main() {
     let mut as_ratio: f64 = 16.0 / 9.0;
     let mut i_wid: i32 = 400;
     let mut i_hit: i32 = (i_wid as f64 / as_ratio) as i32;
-    const SAMPLES: i32 = 500; //500
+    const SAMPLES: i32 = 1000; //500
     const MAXDEEP: i32 = 50; //50
 
     let mut list = Hitlist::new();
@@ -530,6 +542,14 @@ fn main() {
             lookfrom = Vec3::new(478.0, 278.0, -600.0);
             lookat = Vec3::new(278.0, 278.0, 0.0);
             vfov = 40.0;
+            aperture = 0.0;
+        }
+        7 => {
+            list = moon();
+            backgound = Color::zero();
+            lookfrom = Vec3::new(13.0, 2.0, 3.0);
+            lookat = Vec3::new(0.0, 0.0, 0.0);
+            vfov = 20.0;
             aperture = 0.0;
         }
         _ => {}
