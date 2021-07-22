@@ -596,7 +596,7 @@ pub fn idiy() -> Hitlist {
     list.add(arc_cs);
 
     list.add(Arc::new(Sphere::new(
-        Vec3::new(280.0, 150.0, -80.0),
+        Vec3::new(280.0, 90.0, -20.0),
         70.0,
         Arc::new(Dielectric::new(1.5)),
     )));
