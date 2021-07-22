@@ -321,7 +321,9 @@ pub fn cornell_box() -> Hitlist {
 
 pub fn final_scene() -> Hitlist {
     let mut ground = Hitlist::new();
+    let path = Path::new("moonmap.jpg");
     let mat_g = Arc::new(Lamber::cnew(Color::new(0.48, 0.83, 0.53)));
+    let mat_g = Arc::new(Lamber::new(Arc::new(texture::ImageTexture::new(&path))));
 
     let boxes_per_side: usize = 20;
     for i in 0..boxes_per_side {
@@ -443,9 +445,33 @@ pub fn moon() -> Hitlist {
     let eartext = Arc::new(texture::ImageTexture::new(&path));
     let mat = Arc::new(DiffuseLight::new(eartext));
 
-    let arc_s = Arc::new(Sphere::new(Vec3::new(0.0, 2.0, 0.0), 2.0, mat.clone()));
+    let arc_s = Arc::new(Sphere::new(Vec3::new(0.0, 0.0, 0.0), 2.0, mat.clone()));
+    let arc_s = Arc::new(shapes::RotateY::new(arc_s, 60.0));
+    let arc_s = Arc::new(shapes::Translate::new(arc_s, Vec3::new(-2.0, 0.0, -1.0)));
     list.add(arc_s);
 
+    let mat_a = Arc::new(Lamber::new(Arc::new(texture::NoiseTexture::new(0.1))));
+    let arc_a = Arc::new(shapes::Boxes::new(Vec3::new(-1.5, -1.5, -1.5), Vec3::new(1.5, 1.5, 1.5), mat_a.clone()));
+    let arc_a = Arc::new(shapes::RotateY::new(arc_a, 60.0));
+    let arc_a = Arc::new(shapes::RotateZ::new(arc_a, 60.0));
+    let arc_a = Arc::new(shapes::Translate::new(arc_a, Vec3::new(0.0, 0.0, 5.0)));
+    list.add(arc_a);
+
+    let mat_b = Arc::new(DiffuseLight::cnew(Color::ones()*30.0));
+    let arc_b = Arc::new(shapes::XzRect::new(-4.0, 4.0, -4.0, 4.0, 9.0, mat_b.clone()));
+    list.add(arc_b);
+
+    let mut boundary = Arc::new(Sphere::new(
+        Vec3::new(0.0, -1003.0, 0.0),
+        1000.0,
+        Arc::new(Dielectric::new(1.5)),
+    ));
+    list.add(boundary.clone());
+    list.add(Arc::new(Sphere::new(
+        Vec3::new(0.0, -1003.0, 0.0),
+        999.8,
+        Arc::new(Lamber::cnew(Color::ones())),
+    )));
 
     list
 }
@@ -466,8 +492,8 @@ fn main() {
     let mut as_ratio: f64 = 16.0 / 9.0;
     let mut i_wid: i32 = 400;
     let mut i_hit: i32 = (i_wid as f64 / as_ratio) as i32;
-    const SAMPLES: i32 = 7000; //500
-    const MAXDEEP: i32 = 50; //50
+    const SAMPLES: i32 = 200; //500
+    const MAXDEEP: i32 = 20; //50
 
     let mut list = Hitlist::new();
 
@@ -545,9 +571,13 @@ fn main() {
             aperture = 0.0;
         }
         7 => {
+            i_wid = 800;
+            i_hit = 800;
+            as_ratio = 1.0;
+
             list = moon();
             backgound = Color::zero();
-            lookfrom = Vec3::new(13.0, 2.0, 3.0);
+            lookfrom = Vec3::new(60.0, 2.0, 0.0);
             lookat = Vec3::new(0.0, 0.0, 0.0);
             vfov = 20.0;
             aperture = 0.0;

@@ -871,6 +871,208 @@ impl Hittable for RotateY {
 }
 
 #[derive(Debug, Clone)]
+pub struct RotateX {
+    shape: Arc<Hittable>,
+    sin_theta: f64,
+    cos_theta: f64,
+    hasbox: bool,
+    bbox: AABB,
+}
+
+impl RotateX {
+    pub fn new(arc: Arc<Hittable>, angle: f64) -> Self {
+        let radians = tools::dtr(angle);
+        let sin_t = radians.sin();
+        let cos_t = radians.cos();
+        let mut flag = false;
+        let mut bx = AABB::emnew();
+        if let Some(t_bx) = arc.bebox(0.0, 1.0) {
+            bx = t_bx;
+            flag = true;
+        }
+
+        let mut mn = Vec3::new(tools::INF, tools::INF, tools::INF);
+        let mut mx = Vec3::new(-tools::INF, -tools::INF, -tools::INF);
+
+        for i in 0..2 {
+            for j in 0..2 {
+                for k in 0..2 {
+                    let di = i as f64;
+                    let dj = j as f64;
+                    let dk = k as f64;
+                    let x = di * bx.max().x() + (1.0 - di) * bx.min().x();
+                    let y = dj * bx.max().y() + (1.0 - dj) * bx.min().y();
+                    let z = dk * bx.max().z() + (1.0 - dk) * bx.min().z();
+
+                    let newy = cos_t * y + sin_t * z;
+                    let newz = -sin_t * y + cos_t * z;
+
+                    let tes = Vec3::new(x, newy, newz);
+                    mn.x = if mn.x < tes.x { mn.x } else { tes.x };
+                    mx.x = if mx.x > tes.x { mx.x } else { tes.x };
+                    mn.y = if mn.y < tes.y { mn.y } else { tes.y };
+                    mx.y = if mx.y > tes.y { mx.y } else { tes.y };
+                    mn.z = if mn.z < tes.z { mn.z } else { tes.z };
+                    mx.z = if mx.z > tes.z { mx.z } else { tes.z };
+                }
+            }
+        }
+
+        Self {
+            shape: arc,
+            sin_theta: sin_t,
+            cos_theta: cos_t,
+            hasbox: flag,
+            bbox: AABB::new(mn, mx),
+        }
+    }
+}
+
+impl Hittable for RotateX {
+    fn hit(&self, r: Ray, t_min: f64, t_max: f64) -> Option<Hitrec> {
+        let mut org = r.origin();
+        let mut dir = r.diraction();
+        let sin = self.sin_theta;
+        let cos = self.cos_theta;
+
+        org.y = cos * r.origin().y() - sin * r.origin().z();
+        org.z = sin * r.origin().y() + cos * r.origin().z();
+
+        dir.y = cos * r.diraction().y() - sin * r.diraction().z();
+        dir.z = sin * r.diraction().y() + cos * r.diraction().z();
+
+        let ror = Ray::new(org, dir, r.time());
+
+        match self.shape.hit(ror.clone(), t_min, t_max) {
+            Some(mut rec) => {
+                let mut p = rec.p();
+                let mut nf = rec.nf();
+
+                p.y = cos * rec.p().y() + sin * rec.p().z();
+                p.z = -sin * rec.p().y() + cos * rec.p().z();
+                nf.y = cos * rec.nf().y() + sin * rec.nf().z();
+                nf.z = -sin * rec.nf().y() + cos * rec.nf().z();
+
+                rec.p = p;
+                rec.set_face(ror.clone(), nf);
+
+                Some(rec)
+            }
+            None => None,
+        }
+    }
+
+    fn bebox(&self, t0: f64, t1: f64) -> Option<AABB> {
+        if self.hasbox {
+            Some(self.bbox.clone())
+        } else {
+            None
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct RotateZ {
+    shape: Arc<Hittable>,
+    sin_theta: f64,
+    cos_theta: f64,
+    hasbox: bool,
+    bbox: AABB,
+}
+
+impl RotateZ {
+    pub fn new(arc: Arc<Hittable>, angle: f64) -> Self {
+        let radians = tools::dtr(angle);
+        let sin_t = radians.sin();
+        let cos_t = radians.cos();
+        let mut flag = false;
+        let mut bx = AABB::emnew();
+        if let Some(t_bx) = arc.bebox(0.0, 1.0) {
+            bx = t_bx;
+            flag = true;
+        }
+
+        let mut mn = Vec3::new(tools::INF, tools::INF, tools::INF);
+        let mut mx = Vec3::new(-tools::INF, -tools::INF, -tools::INF);
+
+        for i in 0..2 {
+            for j in 0..2 {
+                for k in 0..2 {
+                    let di = i as f64;
+                    let dj = j as f64;
+                    let dk = k as f64;
+                    let x = di * bx.max().x() + (1.0 - di) * bx.min().x();
+                    let y = dj * bx.max().y() + (1.0 - dj) * bx.min().y();
+                    let z = dk * bx.max().z() + (1.0 - dk) * bx.min().z();
+
+                    let newy = cos_t * y + sin_t * x;
+                    let newx = -sin_t * y + cos_t * x;
+
+                    let tes = Vec3::new(newx, newy, z);
+                    mn.x = if mn.x < tes.x { mn.x } else { tes.x };
+                    mx.x = if mx.x > tes.x { mx.x } else { tes.x };
+                    mn.y = if mn.y < tes.y { mn.y } else { tes.y };
+                    mx.y = if mx.y > tes.y { mx.y } else { tes.y };
+                    mn.z = if mn.z < tes.z { mn.z } else { tes.z };
+                    mx.z = if mx.z > tes.z { mx.z } else { tes.z };
+                }
+            }
+        }
+
+        Self {
+            shape: arc,
+            sin_theta: sin_t,
+            cos_theta: cos_t,
+            hasbox: flag,
+            bbox: AABB::new(mn, mx),
+        }
+    }
+}
+
+impl Hittable for RotateZ {
+    fn hit(&self, r: Ray, t_min: f64, t_max: f64) -> Option<Hitrec> {
+        let mut org = r.origin();
+        let mut dir = r.diraction();
+        let sin = self.sin_theta;
+        let cos = self.cos_theta;
+
+        org.y = cos * r.origin().y() - sin * r.origin().x();
+        org.x = sin * r.origin().y() + cos * r.origin().x();
+
+        dir.y = cos * r.diraction().y() - sin * r.diraction().x();
+        dir.x = sin * r.diraction().y() + cos * r.diraction().x();
+
+        let ror = Ray::new(org, dir, r.time());
+
+        match self.shape.hit(ror.clone(), t_min, t_max) {
+            Some(mut rec) => {
+                let mut p = rec.p();
+                let mut nf = rec.nf();
+
+                p.y = cos * rec.p().y() + sin * rec.p().x();
+                p.x = -sin * rec.p().y() + cos * rec.p().x();
+                nf.y = cos * rec.nf().y() + sin * rec.nf().x();
+                nf.x = -sin * rec.nf().y() + cos * rec.nf().x();
+
+                rec.p = p;
+                rec.set_face(ror.clone(), nf);
+
+                Some(rec)
+            }
+            None => None,
+        }
+    }
+
+    fn bebox(&self, t0: f64, t1: f64) -> Option<AABB> {
+        if self.hasbox {
+            Some(self.bbox.clone())
+        } else {
+            None
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct ConstantMedium {
     boundary: Arc<Hittable>,
     phase_function: Arc<Material>,

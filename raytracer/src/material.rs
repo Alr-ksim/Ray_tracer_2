@@ -157,7 +157,7 @@ impl Material for DiffuseLight {
         false
     }
     fn emitted(&self, u: f64, v: f64, p: &Vec3) -> Color {
-        self.emit.value(u, v, p)
+        Vec3::elemul(self.emit.value(u, v, p), Vec3::ones()) //lighter
     }
 }
 
