@@ -573,7 +573,7 @@ pub fn idiy() -> Hitlist {
     list.add(brd_bas2);
     list.add(arc_bas2);
     list.add(arc_moon);
-    
+
     let pos = Vec3::new(420.0, 70.0, 160.0);
 
     let arc_cube = Arc::new(shapes::Boxes::new(
@@ -585,18 +585,9 @@ pub fn idiy() -> Hitlist {
         Arc::new(shapes::RotateX::new(arc_cube, 45.0)),
         45.0,
     ));
-    let arc_cube1 = Arc::new(shapes::Translate::new(
-        arc_cube.clone(),
-        pos.clone(),
-    ));
-    let arc_cube = Arc::new(shapes::RotateY::new(
-        arc_cube,
-        45.0,
-    ));
-    let arc_cube2 = Arc::new(shapes::Translate::new(
-        arc_cube.clone(),
-        pos.clone(),
-    ));
+    let arc_cube1 = Arc::new(shapes::Translate::new(arc_cube.clone(), pos.clone()));
+    let arc_cube = Arc::new(shapes::RotateY::new(arc_cube, 45.0));
+    let arc_cube2 = Arc::new(shapes::Translate::new(arc_cube.clone(), pos.clone()));
     let arc_cs = Arc::new(shapes::ConstantMedium::cnew(
         arc_cube.clone(),
         0.4,
@@ -614,12 +605,10 @@ pub fn idiy() -> Hitlist {
     )));
 
     let path = Path::new("lxw.jpg");
-    let lxw = Arc::new(DiffuseLight::new(Arc::new(texture::ImageTexture::new(&path))));
-    let arc_lxw = Arc::new(Sphere::new(
-        Vec3::new(0.0, 0.0, 0.0),
-        30.0,
-        lxw,
-    ));
+    let lxw = Arc::new(DiffuseLight::new(Arc::new(texture::ImageTexture::new(
+        &path,
+    ))));
+    let arc_lxw = Arc::new(Sphere::new(Vec3::new(0.0, 0.0, 0.0), 30.0, lxw));
     let arc_lxw = Arc::new(shapes::Translate::new(
         Arc::new(shapes::RotateY::new(arc_lxw, 60.0)),
         pos.clone(),
