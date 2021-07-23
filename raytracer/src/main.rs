@@ -544,7 +544,7 @@ pub fn idiy() -> Hitlist {
     ));
     let arc_bas1 = Arc::new(shapes::Translate::new(
         Arc::new(shapes::RotateY::new(arc_bas1, 60.0)),
-        Vec3::new(300.0, 0.0, 100.0),
+        Vec3::new(200.0, 0.0, 100.0),
     ));
     let brd_bas2 = Arc::new(shapes::Boxes::new(
         Vec3::new(-20.0, 0.0, -20.0),
@@ -553,7 +553,7 @@ pub fn idiy() -> Hitlist {
     ));
     let brd_bas2 = Arc::new(shapes::Translate::new(
         Arc::new(shapes::RotateY::new(brd_bas2, -20.0)),
-        Vec3::new(300.0, 40.0, 100.0),
+        Vec3::new(200.0, 40.0, 100.0),
     ));
     let arc_bas2 = Arc::new(shapes::ConstantMedium::new(
         brd_bas2.clone(),
@@ -567,24 +567,35 @@ pub fn idiy() -> Hitlist {
     let arc_moon = Arc::new(Sphere::new(Vec3::zero(), 80.0, moon_mat));
     let arc_moon = Arc::new(shapes::Translate::new(
         arc_moon,
-        Vec3::new(300.0, 150.0, 100.0),
+        Vec3::new(200.0, 150.0, 100.0),
     ));
     list.add(arc_bas1);
     list.add(brd_bas2);
     list.add(arc_bas2);
     list.add(arc_moon);
+    
+    let pos = Vec3::new(420.0, 70.0, 160.0);
 
     let arc_cube = Arc::new(shapes::Boxes::new(
-        Vec3::new(-50.0, -50.0, -50.0),
-        Vec3::new(50.0, 50.0, 50.0),
+        Vec3::new(-40.0, -40.0, -40.0),
+        Vec3::new(40.0, 40.0, 40.0),
         Arc::new(Dielectric::new(1.5)),
     ));
-    let arc_cube = Arc::new(shapes::Translate::new(
-        Arc::new(shapes::RotateZ::new(
-            Arc::new(shapes::RotateY::new(arc_cube, 45.0)),
-            45.0,
-        )),
-        Vec3::new(200.0, 72.0, -100.0),
+    let arc_cube = Arc::new(shapes::RotateZ::new(
+        Arc::new(shapes::RotateX::new(arc_cube, 45.0)),
+        45.0,
+    ));
+    let arc_cube1 = Arc::new(shapes::Translate::new(
+        arc_cube.clone(),
+        pos.clone(),
+    ));
+    let arc_cube = Arc::new(shapes::RotateY::new(
+        arc_cube,
+        45.0,
+    ));
+    let arc_cube2 = Arc::new(shapes::Translate::new(
+        arc_cube.clone(),
+        pos.clone(),
     ));
     let arc_cs = Arc::new(shapes::ConstantMedium::cnew(
         arc_cube.clone(),
@@ -592,15 +603,55 @@ pub fn idiy() -> Hitlist {
         Color::new(0.2, 0.561, 0.890),
     ));
 
-    list.add(arc_cube);
-    list.add(arc_cs);
+    list.add(arc_cube1);
+    list.add(arc_cube2);
+    // list.add(arc_cs);
 
     list.add(Arc::new(Sphere::new(
-        Vec3::new(280.0, 90.0, -20.0),
-        70.0,
+        Vec3::new(430.0, 70.0, -100.0),
+        60.0,
         Arc::new(Dielectric::new(1.5)),
     )));
 
+    let path = Path::new("lxw.jpg");
+    let lxw = Arc::new(DiffuseLight::new(Arc::new(texture::ImageTexture::new(&path))));
+    let arc_lxw = Arc::new(Sphere::new(
+        Vec3::new(0.0, 0.0, 0.0),
+        30.0,
+        lxw,
+    ));
+    let arc_lxw = Arc::new(shapes::Translate::new(
+        Arc::new(shapes::RotateY::new(arc_lxw, 60.0)),
+        pos.clone(),
+    ));
+    list.add(arc_lxw);
+
+    let mut cube = Hitlist::new();
+    let ns: usize = 1000;
+    for i in 0..ns {
+        cube.add(Arc::new(Sphere::new(
+            Vec3::randvr(0.0, 165.0),
+            10.0,
+            Arc::new(Lamber::cnew(randc())),
+        )));
+    }
+    list.add(Arc::new(shapes::Translate::new(
+        Arc::new(shapes::RotateY::new(
+            Arc::new(shapes::BvhNode::fnew(&mut cube, 0.0, 1.0)),
+            45.0,
+        )),
+        Vec3::new(250.0, 270.0, -200.0),
+    )));
+
+    let mat_m = Arc::new(Metal::new(Color::new(0.97, 0.94, 0.03), 0.1));
+    list.add(Arc::new(MovingSphere::new(
+        Vec3::new(100.0, 80.0, -40.0),
+        Vec3::new(130.0, 120.0, -70.0),
+        0.0,
+        1.0,
+        60.0,
+        mat_m,
+    )));
     list
 }
 
@@ -621,8 +672,8 @@ fn main() {
     let mut as_ratio: f64 = 16.0 / 9.0;
     let mut i_wid: i32 = 400;
     let mut i_hit: i32 = (i_wid as f64 / as_ratio) as i32;
-    const SAMPLES: i32 = 3000; //500
-    const MAXDEEP: i32 = 50; //50
+    const SAMPLES: i32 = 100; //500
+    const MAXDEEP: i32 = 10; //50
 
     let mut list = Hitlist::new();
 
@@ -717,8 +768,8 @@ fn main() {
             i_hit = 800;
             i_wid = 800;
             backgound = Color::zero();
-            lookfrom = Vec3::new(1000.0, 200.0, 0.0);
-            lookat = Vec3::new(600.0, 210.0, 0.0);
+            lookfrom = Vec3::new(1100.0, 190.0, 100.0);
+            lookat = Vec3::new(700.0, 200.0, 50.0);
             vfov = 40.0;
             aperture = 0.0;
         }
